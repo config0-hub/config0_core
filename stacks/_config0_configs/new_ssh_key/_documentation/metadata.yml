@@ -1,0 +1,9 @@
+desc: The stack generates/creates ssh_key.
+release: 0.0.1
+categories: 
+   - ssh_key
+   - config0-core
+tags:
+   - config0-core
+   - ssh_key
+   - infrastructure

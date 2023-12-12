@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+#
+#This file is part of "jiffy".
+#
+#Project: jiffy: A product for building and managing infrastructure: 
+#cloud provider services, and servers and their configurations.
+#
+#Description: A product for building and managing infrastructure. 
+#This includes third party API calls for services such as virtual
+#cloud servers, load balancers, databases, and other. The product 
+#manages connectivity and appropriate communication among these 
+#aws.
+#
+#Copyright (C) Gary Leong - All Rights Reserved
+#Unauthorized copying of this file, via any medium is strictly prohibited
+#Proprietary and confidential
+#Written by Gary Leong  <gwleong@gmail.com, September 17,2020
+
+import os
+import sys
+
+from config0_publisher.loggerly import Config0Logger
+from config0_publisher.resource_manage import ResourceCmdHelper
+
+class Main(ResourceCmdHelper):
+
+    def __init__(self,**kwargs):
+
+        ResourceCmdHelper.__init__(self,
+                                   app_name=kwargs["app_name"],
+                                   set_must_exists=["stateful_id"])
+
+        self.classname = 'SYNC_TO_SHARE'
+        self.logger = Config0Logger(self.classname,logcategory="cloudprovider")
+        self.logger.debug("Instantiating %s" % self.classname)
+        self.set_inputargs(add_app_vars=True)
+
+    def create(self):
+
+        self.sync_to_share()
+
+def usage():
+
+    print("""
+script + environmental variables
+
+or
+
+script + json_input (as argument)
+
+environmental variables:
+
+    create:
+        JOB_INSTANCE_ID
+        SCHEDULE_ID
+        RUN_ID
+        METHOD
+
+       """)
+    exit(4)
+
+if __name__ == '__main__':
+
+    try:
+        json_input = sys.argv[1]
+    except:
+        json_input = None
+
+    if not os.environ.get("CONFIG0_APP_NAME"):
+        print('Environmental Variable "{}" needs to be set!'.format("CONFIG0_APP_NAME"))
+        exit(4)
+
+    main = Main(app_name=os.environ["CONFIG0_APP_NAME"].lower())
+
+    if main.inputargs.get("method","create") == "create":
+
+        main.check_required_inputargs()
+        main.create()
+
+    else:
+        usage()
+        print('method "{}" not supported!'.format(main.inputargs.get("method")))
+        exit(4)

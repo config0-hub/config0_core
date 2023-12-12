@@ -1,0 +1,17 @@
+desc: register a configs host container
+release: 0.0.1
+categories: 
+   - config0-core
+   - config0_run
+tags:
+   - config0_run
+   - config0-core
+   - config0
+   - docker
+   - jiffyhost
+   - register
+   - build
+   - configs
+   - host
+   - deploy
+   - configuration
