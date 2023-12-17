@@ -75,4 +75,3 @@ def run(stackargs):
     stack.add_run_metadata(pipeline_env_var, publish=True)
 
     return stack.get_results(stackargs.get("destroy_instance"))
-
