@@ -3,7 +3,7 @@ def run(stackargs):
     stack = newStack(stackargs)
 
     stack.parse.add_required(key="ttl", default="7200")
-    stack.add_substack('config0-hub:::config0-core::publish_worker')
+    stack.add_substack('config0-publish:::config0-core::publish_worker')
 
     # Initialize Variables in stack
     stack.init_variables()

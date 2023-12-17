@@ -14,8 +14,8 @@ def run(stackargs):
     stack.parse.add_optional(key="publish2pipeline",default="null")
     stack.parse.add_optional(key="add_groups",default="null")
 
-    #stack.add_substack('config0-hub:::config0-core::register_config_container')
-    stack.add_substack('config0-hub:::config0-core::publish_info')
+    #stack.add_substack('config0-publish:::config0-core::register_config_container')
+    stack.add_substack('config0-publish:::config0-core::publish_info')
 
     # Initialize Variables in stack
     stack.init_variables()
