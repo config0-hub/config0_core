@@ -1,0 +1,12 @@
+desc: Stack for selecting and orderly destroy resources
+release: 0.0.1
+categories: 
+   - config0_saas
+tags:
+   - config0_saas
+   - saas
+   - schedule
+   - delete
+   - destroy
+   - resources
+   - engine

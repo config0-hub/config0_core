@@ -1,0 +1,13 @@
+desc: returns metadata to be returned to user
+release: 0.0.1
+categories: 
+   - config0-core
+   - metadata
+   - publish_info
+tags:
+   - config0_run
+   - config0-core
+   - config0
+   - metadata
+   - publish
+   - publish_info
