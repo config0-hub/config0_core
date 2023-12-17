@@ -1,11 +1,11 @@
 desc: empty stack that does nothing
 release: 0.0.1
 categories: 
-   - config0-core
+   - config0_core
    - config0_run
 tags:
    - config0_run
-   - config0-core
+   - config0_core
    - config0
    - run
    - empty
