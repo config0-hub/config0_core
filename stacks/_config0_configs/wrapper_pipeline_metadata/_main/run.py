@@ -11,10 +11,10 @@ def run(stackargs):
     # Initialize Variables in stack
     stack.init_variables()
 
-    kwargs = {"run_id": stack.run_id}
-    kwargs["data"] = stack.data
-    kwargs["mkey"] = stack.mkey
+    inputargs = {"run_id": stack.run_id}
+    inputargs["data"] = stack.data
+    inputargs["mkey"] = stack.mkey
 
-    stack.run_metadata.add(**kwargs)
+    stack.run_metadata.add(**inputargs)
 
     return stack.get_results()

@@ -2,10 +2,10 @@ desc: Wrapper for add hostgroups to a host
 release: 0.0.1
 categories: 
    - config0_saas
-   - config0_core
+   - config0-core
 tags:
    - config0
-   - config0_core
+   - config0-core
    - config0
    - hostgroups
    - wrapper

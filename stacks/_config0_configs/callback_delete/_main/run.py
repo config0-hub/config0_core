@@ -13,9 +13,9 @@ def run(stackargs):
     stack.parse.add_optional(key="parallel", default="true")
 
     # Add substacks
-    stack.add_substack('config0-publish:::config0_core::delete_schedules')
-    stack.add_substack('config0-publish:::config0_core::delete_resources_by_time')
-    # stack.add_substack('config0-publish:::config0_core::delete_resources')
+    stack.add_substack('config0-hub:::config0-core::delete_schedules')
+    stack.add_substack('config0-hub:::config0-core::delete_resources_by_time')
+    # stack.add_substack('config0-hub:::config0-core::delete_resources')
 
     # Initialize
     stack.init_variables()
@@ -34,8 +34,8 @@ def run(stackargs):
     if stack.get_attr("parallel") not in ["None", "null", None, False, "false"]:
         input_values["parallel_overide"] = True
 
-    kwargs = {"input_values": input_values}
-    stack.delete_resources_by_time.insert(display=None, **kwargs)
+    inputargs = {"input_values": input_values}
+    stack.delete_resources_by_time.insert(display=None, **inputargs)
 
     stack.wait_all()
 
@@ -51,9 +51,9 @@ def run(stackargs):
     if stack.get_attr("parallel") not in ["None", "null", None, False, "false"]:
         input_values["parallel_overide"] = True
 
-    kwargs = {"input_values": input_values}
-    kwargs["automation_phase"] = "destroying_schedules"
-    kwargs["human_description"] = 'Delete schedules stack'
-    stack.delete_schedules.insert(display=None, **kwargs)
+    inputargs = {"input_values": input_values}
+    inputargs["automation_phase"] = "destroying_schedules"
+    inputargs["human_description"] = 'Delete schedules stack'
+    stack.delete_schedules.insert(display=None, **inputargs)
 
     return stack.get_results(None)

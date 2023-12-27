@@ -21,7 +21,7 @@
 
 ``` in a stack
 
-      stack.add_substack('config0-publish:::output_resource_to_ui')
+      stack.add_substack('config0-hub:::output_resource_to_ui')
 
       ...
       ...

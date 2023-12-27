@@ -78,7 +78,7 @@ selectors:
        resource_type: security_group
 custom:
    vars_set:
-       stack_name: config0-publish:::vars_set
+       stack_name: config0-hub:::vars_set
        arguments:
          vars_set_name: vpcinfo_dev
          evaluate: null

@@ -162,4 +162,3 @@ def run(stackargs):
                               **resource)
 
     return stack.get_results(None)
-
