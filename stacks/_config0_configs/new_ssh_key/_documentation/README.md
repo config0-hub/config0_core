@@ -14,7 +14,7 @@
 ```
 infrastructure:
    ssh_upload:
-       stack_name: config0-publishnew_ssh_key
+       stack_name: config0-publish:::new_ssh_key
        arguments:
           name: config0-test-do-key
 ```
