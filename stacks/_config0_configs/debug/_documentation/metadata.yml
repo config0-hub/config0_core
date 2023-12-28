@@ -1,0 +1,13 @@
+desc: a machine to debug user issues
+release: 0.0.1
+categories: 
+   - config0-core
+   - config0_run
+tags:
+   - config0_run
+   - config0-core
+   - config0
+   - debug
+   - run
+   - empty
+   - empty_stack

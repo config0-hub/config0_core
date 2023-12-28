@@ -1,0 +1,11 @@
+desc: acquires host lock
+release: 0.0.1
+categories: 
+   - config0-core
+tags:
+   - config0_run
+   - config0-core
+   - config0
+   - getlock
+   - lock
+   - host
