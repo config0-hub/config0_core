@@ -1,0 +1,2 @@
+# Registers a host container on a docker host that will be used for isolating build and deploys.  For example, a build container that contain the Dockerfile for building theAPI or a deploy host that contains the docker-compose deploy files.  Notably, these host containers only contain the configs, but are not actual build or deploy.  In other words, they contain files to launch the builds and deploys.
+
