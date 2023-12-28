@@ -128,3 +128,4 @@ def run(stackargs):
     stack.publish(resource)
 
     return stack.get_results()
+
