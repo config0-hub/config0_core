@@ -317,7 +317,7 @@ def run(stackargs):
                              types="str")
 
     stack.parse.add_optional(key="timeout",
-                             default=1800,
+                             default=1650,
                              types="int")
 
     stack.parse.add_optional(key="cloud_tags_hash",
