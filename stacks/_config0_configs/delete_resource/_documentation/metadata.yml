@@ -1,4 +1,4 @@
-desc: Stack for destroying a schedule on the engine
+desc: Stack for destroying a single resource
 release: 0.0.1
 categories: 
    - config0_saas
@@ -7,4 +7,6 @@ tags:
    - saas
    - schedule
    - delete
+   - destroy
+   - resources
    - engine
