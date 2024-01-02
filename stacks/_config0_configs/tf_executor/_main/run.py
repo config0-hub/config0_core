@@ -72,6 +72,8 @@ class ResourceSettings(object):
         self.name = kwargs["resource_name"]
         self.tf_vars = kwargs.get("tf_vars")
 
+        self.phases_params = kwargs.get("phases_params")
+
         if kwargs.get("resource_output_keys"):
             self.output_keys = kwargs["resource_output_keys"]
 
@@ -143,6 +145,9 @@ class ResourceSettings(object):
         self.values["provider"] = self.provider
         self.values["docker_runtime"] = self.runtime_settings.docker_runtime
 
+        if self.phases_params:
+            self.values["phases_params"] = self.phases_params
+
     def get_inputargs(self,env_vars):
 
         self.insert_env_vars(env_vars)
@@ -150,14 +155,14 @@ class ResourceSettings(object):
         human_description = "Creating name {} type {}".format(self.name,
                                                               self.type)
         
-        inputargs = {"display":True}
-        inputargs["env_vars"] = json.dumps(self.env_vars)
-        inputargs["name"] = self.name
-        inputargs["human_description"] = human_description
-        inputargs["stateful_id"] = self.stack.stateful_id
+        inputargs = {"display": True,"env_vars": json.dumps(self.env_vars),"name": self.name,
+                     "human_description": human_description,"stateful_id": self.stack.stateful_id}
 
         if self.stack.get_attr("ssm_name"):
             inputargs["ssm_name"] = self.stack.ssm_name
+
+        if self.phases_params:
+            inputargs["phases_params"] = self.phases_params
 
         if self.stack.get_attr("remote_stateful_bucket") not in ["null", None]:
             inputargs["remote_stateful_bucket"] = self.stack.remote_stateful_bucket
@@ -344,6 +349,11 @@ def run(stackargs):
                              tags="resource,docker",
                              types="str")
 
+    stack.parse.add_optional(key="phases_params_hash",
+                             tags="resource,docker",
+                             types="str")
+
+
     # publish_resource -> output_resource_to_ui
     stack.add_substack('config0-publish:::output_resource_to_ui')
 
@@ -370,6 +380,9 @@ def run(stackargs):
 
     if stack.get_attr("ssm_name"):
         inputargs["ssm_name"] = stack.ssm_name
+
+    if stack.get_attr("phases_params_hash"):
+        inputargs["phases_params"] = stack.b64_decode(stack.phases_params_hash)
 
     if stack.get_attr("tf_vars_hash"):
         inputargs["tf_vars"] = stack.b64_decode(stack.tf_vars_hash)
@@ -402,3 +415,4 @@ def run(stackargs):
         stack.output_resource_to_ui.insert(display=True,**output_inputargs)
 
     return stack.get_results()
+
