@@ -10,6 +10,10 @@ class RuntimeSettings(object):
         self.stack = kwargs["stack"]
         self.docker_runtime = kwargs.get("docker_runtime")
 
+        # these env vars to include during runtime
+        include_env_vars_keys = kwargs.get("include_env_vars_keys")
+
+        # ref 4532643623642
         if kwargs.get("runtime_env_vars"):
             self.env_vars = kwargs["runtime_env_vars"]
             self.to_env_var_value()
@@ -22,6 +26,9 @@ class RuntimeSettings(object):
             self.env_vars["SSM_NAME"] = self.stack.ssm_name
 
         self.settings = { "env_vars":self.env_vars }
+
+        if include_env_vars_keys:
+            self.settings["include_env_vars_keys"] = include_env_vars_keys
 
     def to_env_var_value(self):
 
@@ -72,7 +79,8 @@ class ResourceSettings(object):
         self.name = kwargs["resource_name"]
         self.tf_vars = kwargs.get("tf_vars")
 
-        self.phases_params = kwargs.get("phases_params")
+        self.phases_params = self.stack.get_attr("phases_params")
+        self.phases_params_hash = self.stack.get_attr("phases_params_hash")
 
         if kwargs.get("resource_output_keys"):
             self.output_keys = kwargs["resource_output_keys"]
@@ -138,15 +146,16 @@ class ResourceSettings(object):
         # pass it to the docker container
 
         self.env_vars["METHOD"] = "create"
-        self.env_vars["STATEFUL_ID"] = self.stack.stateful_id
+        self.env_vars["STATEFUL_ID"] = self.stack.stateful_id  # needed for execgroup execution
+
+        # phases params in stack
+        if self.phases_params_hash:
+            self.env_vars["PHASES_PARAMS_HASH"] = self.phases_params_hash  # send to tf resource_wrapper
 
         self.values["resource_type"] = self.type
         self.values["name"] = self.name
         self.values["provider"] = self.provider
         self.values["docker_runtime"] = self.runtime_settings.docker_runtime
-
-        if self.phases_params:
-            self.values["phases_params"] = self.phases_params
 
     def get_inputargs(self,env_vars):
 
@@ -155,8 +164,11 @@ class ResourceSettings(object):
         human_description = "Creating name {} type {}".format(self.name,
                                                               self.type)
         
-        inputargs = {"display": True,"env_vars": json.dumps(self.env_vars),"name": self.name,
-                     "human_description": human_description,"stateful_id": self.stack.stateful_id}
+        inputargs = {"display": True,
+                     "env_vars": json.dumps(self.env_vars),  # self._set_base_values
+                     "name": self.name,
+                     "human_description": human_description,
+                     "stateful_id": self.stack.stateful_id}
 
         if self.stack.get_attr("ssm_name"):
             inputargs["ssm_name"] = self.stack.ssm_name
@@ -214,7 +226,7 @@ class TFExecutor(object):
         else:
             self.tf_vars = {}
 
-        self.resource = ResourceSettings(**kwargs)
+        self.resource_settings = ResourceSettings(**kwargs)
 
     def _get_tf_settings(self):
 
@@ -232,10 +244,10 @@ class TFExecutor(object):
 
     def get_config0_resource_settings(self):
 
-        self.resource.runtime_settings.settings["env_vars"]["RESOURCE_TAGS"] = "{},{}".format(self.resource.type, 
-                                                                                    self.resource.name)
+        self.resource_settings.runtime_settings.settings["env_vars"]["RESOURCE_TAGS"] = "{},{}".format(self.resource_settings.type,
+                                                                                              self.resource_settings.name)
 
-        expression = "self.resource.set_{}()".format(self.resource.provider)
+        expression = "self.resource_settings.set_{}()".format(self.resource_settings.provider)
 
         try:
             exec(expression)
@@ -243,18 +255,18 @@ class TFExecutor(object):
             self.logger.warn("could not execute {} for the provider".format(expression))
 
         # specify the provider e.g. aws, config0, do
-        config0_resource_settings = { "provider":self.resource.provider }
+        config0_resource_settings = { "provider":self.resource_settings.provider }
 
         # specify the resource_type e.g. server, rds, load balancer
-        config0_resource_settings["resource_type"] = self.resource.type
+        config0_resource_settings["resource_type"] = self.resource_settings.type
 
         # provide the resource values to add
-        config0_resource_settings["resource_values"] = self.resource.values
+        config0_resource_settings["resource_values"] = self.resource_settings.values
 
         # specify the docker settings to run terraform
         # testtest333
         # ref 4353453246
-        config0_resource_settings["runtime"] = self.resource.runtime_settings.settings
+        config0_resource_settings["runtime"] = self.resource_settings.runtime_settings.settings
 
         # specify terraform variables and other settings
         config0_resource_settings["terraform"] = self._get_tf_settings()
@@ -268,11 +280,11 @@ class TFExecutor(object):
 
         env_vars = { "CONFIG0_RESOURCE_SETTINGS_HASH": self.get_config0_resource_settings() }
 
-        return self.resource.get_inputargs(env_vars=env_vars)
+        return self.resource_settings.get_inputargs(env_vars=env_vars)
 
     def get_output_inputargs(self):
 
-        return self.resource.get_output_inputargs()
+        return self.resource_settings.get_output_inputargs()
 
 def run(stackargs):
 
@@ -382,7 +394,11 @@ def run(stackargs):
         inputargs["ssm_name"] = stack.ssm_name
 
     if stack.get_attr("phases_params_hash"):
-        inputargs["phases_params"] = stack.b64_decode(stack.phases_params_hash)
+        stack.set_variable("phases_params", stack.b64_decode(stack.phases_params_hash))
+        inputargs["phases_params"] = stack.phases_params
+    else:
+        stack.set_variable("phases_params", None)
+        stack.set_variable("phases_params_hash", None)
 
     if stack.get_attr("tf_vars_hash"):
         inputargs["tf_vars"] = stack.b64_decode(stack.tf_vars_hash)
