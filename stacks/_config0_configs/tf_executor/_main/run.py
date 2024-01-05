@@ -3,6 +3,31 @@ import json
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.utilities import print_json
 
+
+# testtest456
+def _get_default_phase_parameters():
+
+    phase_params = []
+
+    phase_params.append({
+        "name":"submit",
+        "timewait":None,
+        "timeout":None
+    })
+
+    # check is 2 minutes
+    phase_params.append({
+        "name":"retrieve",
+        "timewait":30,
+        "timeout":None,
+        "check": {
+            "interval":10,
+            "retries":12
+        }
+    })
+
+    return phase_params
+
 class RuntimeSettings(object):
 
     def __init__(self,**kwargs):
@@ -393,12 +418,22 @@ def run(stackargs):
     if stack.get_attr("ssm_name"):
         inputargs["ssm_name"] = stack.ssm_name
 
-    if stack.get_attr("phases_params_hash"):
-        stack.set_variable("phases_params", stack.b64_decode(stack.phases_params_hash))
-        inputargs["phases_params"] = stack.phases_params
-    else:
-        stack.set_variable("phases_params", None)
-        stack.set_variable("phases_params_hash", None)
+    ############################################################################################
+    # testtest456
+    ############################################################################################
+    stack.set_variable("phases_params", _get_default_phase_parameters())
+    stack.set_variable("phases_params_hash", stack.b64_encode(stack.phases_params))
+    # testtest456
+
+    # testtest456
+    #if stack.get_attr("phases_params_hash"):
+    #    stack.set_variable("phases_params", stack.b64_decode(stack.phases_params_hash))
+    #    inputargs["phases_params"] = stack.phases_params
+    #else:
+    #    stack.set_variable("phases_params", None)
+    #    stack.set_variable("phases_params_hash", None)
+    # testtest456
+    ############################################################################################
 
     if stack.get_attr("tf_vars_hash"):
         inputargs["tf_vars"] = stack.b64_decode(stack.tf_vars_hash)
