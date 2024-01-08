@@ -7,26 +7,38 @@ from config0_publisher.utilities import print_json
 # testtest456
 def _get_default_phase_parameters():
 
-    phase_params = []
+    phases_params = {
+         "create": [
+            {
+                "name": "submit",
+                "timewait": None,
+            },
+            {
+                "name": "retrieve",
+                "timewait": 3,
+                "inputargs": {
+                    "interval": 10,
+                    "retries": 12
+                }
+            }
+         ],
+         "destroy": [
+            {
+                "name": "submit",
+                "timewait": None,
+            },
+            {
+                "name": "retrieve",
+                "timewait": 3,
+                "inputargs": {
+                    "interval": 10,
+                    "retries": 12
+                }
+            }
+         ]
+    }
 
-    phase_params.append({
-        "name":"submit",
-        "timewait":None,
-        "timeout":None
-    })
-
-    # check is 2 minutes
-    phase_params.append({
-        "name":"retrieve",
-        "timewait":30,
-        "timeout":None,
-        "check": {
-            "interval":10,
-            "retries":12
-        }
-    })
-
-    return phase_params
+    return phases_params
 
 class RuntimeSettings(object):
 
