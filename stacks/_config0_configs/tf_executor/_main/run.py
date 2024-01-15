@@ -4,41 +4,41 @@ from config0_publisher.loggerly import Config0Logger
 from config0_publisher.utilities import print_json
 
 
-# testtest456
-def _get_default_phase_parameters():
-
-    phases_params = {
-         "create": [
-            {
-                "name": "submit",
-                "timewait": None,
-            },
-            {
-                "name": "retrieve",
-                "timewait": 3,
-                "inputargs": {
-                    "interval": 10,
-                    "retries": 12
-                }
-            }
-         ],
-         "destroy": [
-            {
-                "name": "submit",
-                "timewait": None,
-            },
-            {
-                "name": "retrieve",
-                "timewait": 3,
-                "inputargs": {
-                    "interval": 10,
-                    "retries": 12
-                }
-            }
-         ]
-    }
-
-    return phases_params
+# ref/revisit 543524
+#def _get_default_phase_parameters():
+#
+#    phases_params = {
+#         "create": [
+#            {
+#                "name": "submit",
+#                "timewait": None,
+#            },
+#            {
+#                "name": "retrieve",
+#                "timewait": 3,
+#                "inputargs": {
+#                    "interval": 10,
+#                    "retries": 12
+#                }
+#            }
+#         ],
+#         "destroy": [
+#            {
+#                "name": "submit",
+#                "timewait": None,
+#            },
+#            {
+#                "name": "retrieve",
+#                "timewait": 3,
+#                "inputargs": {
+#                    "interval": 10,
+#                    "retries": 12
+#                }
+#            }
+#         ]
+#    }
+#
+#    return phases_params
 
 class RuntimeSettings(object):
 
@@ -116,8 +116,9 @@ class ResourceSettings(object):
         self.name = kwargs["resource_name"]
         self.tf_vars = kwargs.get("tf_vars")
 
-        self.phases_params = self.stack.get_attr("phases_params")
-        self.phases_params_hash = self.stack.get_attr("phases_params_hash")
+        # ref/revisit 543524
+        #self.phases_params = self.stack.get_attr("phases_params")
+        #self.phases_params_hash = self.stack.get_attr("phases_params_hash")
 
         if kwargs.get("resource_output_keys"):
             self.output_keys = kwargs["resource_output_keys"]
@@ -185,9 +186,14 @@ class ResourceSettings(object):
         self.env_vars["METHOD"] = "create"
         self.env_vars["STATEFUL_ID"] = self.stack.stateful_id  # needed for execgroup execution
 
+        ##############################################
+        # ref/revisit 543524
+        # phases working with tag 0.103
+        # but needs more testing
         # phases params in stack
-        if self.phases_params_hash:
-            self.env_vars["PHASES_PARAMS_HASH"] = self.phases_params_hash  # send to tf resource_wrapper
+        #if self.phases_params_hash:
+        #    self.env_vars["PHASES_PARAMS_HASH"] = self.phases_params_hash  # send to tf resource_wrapper
+        ##############################################
 
         self.values["resource_type"] = self.type
         self.values["name"] = self.name
@@ -210,8 +216,9 @@ class ResourceSettings(object):
         if self.stack.get_attr("ssm_name"):
             inputargs["ssm_name"] = self.stack.ssm_name
 
-        if self.phases_params:
-            inputargs["phases_params"] = self.phases_params
+        # ref/revisit 543524
+        #if self.phases_params:
+        #    inputargs["phases_params"] = self.phases_params
 
         if self.stack.get_attr("remote_stateful_bucket") not in ["null", None]:
             inputargs["remote_stateful_bucket"] = self.stack.remote_stateful_bucket
@@ -398,9 +405,10 @@ def run(stackargs):
                              tags="resource,docker",
                              types="str")
 
-    stack.parse.add_optional(key="phases_params_hash",
-                             tags="resource,docker",
-                             types="str")
+    # ref/revisit 543524
+    #stack.parse.add_optional(key="phases_params_hash",
+    #                         tags="resource,docker",
+    #                         types="str")
 
 
     # publish_resource -> output_resource_to_ui
@@ -431,20 +439,15 @@ def run(stackargs):
         inputargs["ssm_name"] = stack.ssm_name
 
     ############################################################################################
-    # testtest456
-    ############################################################################################
-    stack.set_variable("phases_params", _get_default_phase_parameters())
-    stack.set_variable("phases_params_hash", stack.b64_encode(stack.phases_params))
-    # testtest456
-
-    # testtest456
+    # ref/revisit 543524
+    #stack.set_variable("phases_params", _get_default_phase_parameters())
+    #stack.set_variable("phases_params_hash", stack.b64_encode(stack.phases_params))
     #if stack.get_attr("phases_params_hash"):
     #    stack.set_variable("phases_params", stack.b64_decode(stack.phases_params_hash))
     #    inputargs["phases_params"] = stack.phases_params
     #else:
     #    stack.set_variable("phases_params", None)
     #    stack.set_variable("phases_params_hash", None)
-    # testtest456
     ############################################################################################
 
     if stack.get_attr("tf_vars_hash"):
