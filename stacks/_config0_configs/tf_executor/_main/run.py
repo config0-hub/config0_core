@@ -254,7 +254,7 @@ class TFConfigScope(object):
 
         self.stack = kwargs["stack"]
         self.type = kwargs["terraform_type"]
-        self.resource_params = kwargs["resource_params"]
+        self.resource_configs = kwargs["resource_configs"]
 
         self.stack.verify_variables()
 
@@ -276,7 +276,7 @@ class TFConfigScope(object):
 
         tf_settings = { "tf_vars":self.tf_vars,
                         "terraform_type":self.type,
-                        "resource_params": self.resource_params }
+                        "resource_configs": self.resource_configs }
 
         return tf_settings
 
@@ -339,7 +339,7 @@ def run(stackargs):
                              default="null",
                              types="str")
 
-    stack.parse.add_optional(key="resource_params_hash",
+    stack.parse.add_optional(key="resource_configs_hash",
                              default="null",
                              types="str")
 
@@ -439,8 +439,8 @@ def run(stackargs):
     if stack.get_attr("tf_vars_hash"):
         inputargs["tf_vars"] = stack.b64_decode(stack.tf_vars_hash)
 
-    if stack.get_attr("resource_params_hash"):
-        inputargs["resource_params"] = stack.b64_decode(stack.resource_params_hash)
+    if stack.get_attr("resource_configs_hash"):
+        inputargs["resource_configs"] = stack.b64_decode(stack.resource_configs_hash)
 
     if stack.get_attr("runtime_env_vars_hash"):
         inputargs["runtime_env_vars"] = stack.b64_decode(stack.runtime_env_vars)
