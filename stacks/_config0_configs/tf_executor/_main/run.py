@@ -3,7 +3,6 @@ import json
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.utilities import print_json
 
-
 # ref/revisit 543524
 #def _get_default_phase_parameters():
 #
@@ -40,48 +39,32 @@ from config0_publisher.utilities import print_json
 #
 #    return phases_params
 
-class RuntimeSettings(object):
+class RunCommon(object):
 
-    def __init__(self,**kwargs):
+    '''
+    some common methods to be inherited
+    '''
 
-        self.stack = kwargs["stack"]
-        self.docker_runtime = kwargs.get("docker_runtime")
+    def __init__(self):
 
-        # these env vars to include during runtime
-        include_env_vars_keys = kwargs.get("include_env_vars_keys")
+        self.classname = "RunCommon"
 
-        # ref 4532643623642
-        if kwargs.get("runtime_env_vars"):
-            self.env_vars = kwargs["runtime_env_vars"]
-            self.to_env_var_value()
-        else:
-            self.env_vars = {}
-
-        self.env_vars["STATEFUL_ID"] = self.stack.stateful_id
-
-        if self.stack.get_attr("ssm_name"):
-            self.env_vars["SSM_NAME"] = self.stack.ssm_name
-
-        self.settings = { "env_vars":self.env_vars }
-
-        if include_env_vars_keys:
-            self.settings["include_env_vars_keys"] = include_env_vars_keys
-
-    def to_env_var_value(self):
+    def validate_env_vars(self,include_num=None):
 
         if not self.env_vars.items():
             return
 
         for _key,_value in self.env_vars.items():
 
-            try:
-                number_value = int(_value) 
-            except:
-                number_value = None
+            if include_num:
+                try:
+                    number_value = int(_value)
+                except:
+                    number_value = None
 
-            if number_value:
-                self.env_vars[_key] = "{}".format(_value)
-                continue
+                if number_value:
+                    self.env_vars[_key] = "{}".format(_value)
+                    continue
 
             if _value is True:
                 self.env_vars[_key] = "True"
@@ -89,8 +72,7 @@ class RuntimeSettings(object):
                 self.env_vars[_key] = "False"
             elif _value is None:
                 self.env_vars[_key] = "None"
-
-    def insert_env_vars(self,env_vars):
+    def insert_env_vars(self,env_vars,include_num=None):
 
         if not env_vars:
             return
@@ -102,12 +84,48 @@ class RuntimeSettings(object):
 
             self.env_vars[_key] = _value
 
-        self.to_env_var_value()
+        self.validate_env_vars(include_num=include_num)
 
-class ResourceSettings(object):
+class TFRuntimeScope(RunCommon):
+
+    '''
+    The runtimes include AWS Codebuild, Lambda function, or docker container
+    to execute the Terraform/OpenTofu code
+    '''
 
     def __init__(self,**kwargs):
 
+        RunCommon.__init__(self)
+
+        self.stack = kwargs["stack"]
+        self.docker_runtime = kwargs.get("docker_runtime")
+
+        # ref 4532643623642
+        if kwargs.get("runtime_env_vars"):
+            self.env_vars = kwargs["runtime_env_vars"]
+            self.validate_env_vars(include_num=True)
+        else:
+            self.env_vars = {}
+
+        self.env_vars["STATEFUL_ID"] = self.stack.stateful_id
+
+        if self.stack.get_attr("ssm_name"):
+            self.env_vars["SSM_NAME"] = self.stack.ssm_name
+
+        self.settings = { "env_vars":self.env_vars }
+
+class Config0ResourceScope(RunCommon):
+
+    '''
+    This variables and settings to insert the resource, which
+    is typically a cloud infrastructure in the Config0 resource db.
+    They include things like query keys, lables, etc that we use
+    to interact with Config0 resource db
+    '''
+
+    def __init__(self,**kwargs):
+
+        RunCommon.__init__(self)
         self.stack = kwargs["stack"]
 
         # set additional vars
@@ -141,41 +159,13 @@ class ResourceSettings(object):
 
         if kwargs.get("resource_env_vars"):
             self.env_vars = kwargs["resource_env_vars"]
-            self.to_env_var_value()
+            self.validate_env_vars(include_num=False)
         else:
             self.env_vars = {}
 
-        self.runtime_settings = RuntimeSettings(**kwargs)
+        self.tf_runtime = TFRuntimeScope(**kwargs)
 
         self._set_base_values()
-
-    def to_env_var_value(self):
-
-        if not self.env_vars.items():
-            return
-
-        for _key,_value in self.env_vars.items():
-
-            if _value is True:
-                self.env_vars[_key] = "True"
-            elif _value is False:
-                self.env_vars[_key] = "False"
-            elif _value is None:
-                self.env_vars[_key] = "None"
-
-    def insert_env_vars(self,env_vars):
-
-        if not env_vars:
-            return
-
-        for _key,_value in env_vars.items():
-
-            if _key in self.env_vars:
-                continue
-
-            self.env_vars[_key] = _value
-
-        self.to_env_var_value()
 
     def _set_base_values(self):
 
@@ -198,7 +188,7 @@ class ResourceSettings(object):
         self.values["resource_type"] = self.type
         self.values["name"] = self.name
         self.values["provider"] = self.provider
-        self.values["docker_runtime"] = self.runtime_settings.docker_runtime
+        self.values["docker_runtime"] = self.tf_runtime.docker_runtime
 
     def get_inputargs(self,env_vars):
 
@@ -250,11 +240,15 @@ class ResourceSettings(object):
 
         return inputargs
 
-class TFExecutor(object):
+class TFConfigScope(object):
 
+    '''
+    The Terraform Execution Helper that helps organize and manage
+    things like TF vars that are used to create terraform.tfvars file
+    '''
     def __init__(self,**kwargs):
 
-        self.classname = 'TFExecutor'
+        self.classname = 'TFConfigScope'
         self.logger = Config0Logger(self.classname)
         self.logger.debug("Instantiating %s" % self.classname)
 
@@ -270,7 +264,7 @@ class TFExecutor(object):
         else:
             self.tf_vars = {}
 
-        self.resource_settings = ResourceSettings(**kwargs)
+        self.config0_resource = Config0ResourceScope(**kwargs)
 
     def _get_tf_settings(self):
 
@@ -286,49 +280,41 @@ class TFExecutor(object):
 
         return tf_settings
 
-    def get_config0_resource_settings(self):
+    def get_config0_config0_resource(self):
 
-        self.resource_settings.runtime_settings.settings["env_vars"]["RESOURCE_TAGS"] = "{},{}".format(self.resource_settings.type,
-                                                                                              self.resource_settings.name)
+        self.config0_resource.tf_runtime.settings["env_vars"]["RESOURCE_TAGS"] = "{},{}".format(self.config0_resource.type,
+                                                                                              self.config0_resource.name)
 
-        expression = "self.resource_settings.set_{}()".format(self.resource_settings.provider)
+        expression = "self.config0_resource.set_{}()".format(self.config0_resource.provider)
 
         try:
             exec(expression)
         except:
             self.logger.warn("could not execute {} for the provider".format(expression))
 
-        # specify the provider e.g. aws, config0, do
-        config0_resource_settings = { "provider":self.resource_settings.provider }
-
-        # specify the resource_type e.g. server, rds, load balancer
-        config0_resource_settings["resource_type"] = self.resource_settings.type
-
-        # provide the resource values to add
-        config0_resource_settings["resource_values"] = self.resource_settings.values
-
-        # specify the docker settings to run terraform
-        # testtest333
         # ref 4353453246
-        config0_resource_settings["runtime"] = self.resource_settings.runtime_settings.settings
-
-        # specify terraform variables and other settings
-        config0_resource_settings["terraform"] = self._get_tf_settings()
+        _settings = {
+            "provider": self.config0_resource.provider,  # provider e.g. aws, config0, do
+            "resource_type": self.config0_resource.type,  # resource_type e.g. server, rds, load balancer
+            "resource_values": self.config0_resource.values,  # resource values to extend in config0 db
+            "runtime": self.config0_resource.tf_runtime.settings,  # runtime setting to extend tf
+            "terraform": self._get_tf_settings()  # terraform variables and other settings
+        }
 
         if os.environ.get("DEBUG_STACK"):
-            print_json(config0_resource_settings)
+            print_json(_settings)
 
-        return self.stack.b64_encode(config0_resource_settings)
+        return self.stack.b64_encode(_settings)
 
     def get_execgroup_inputargs(self):
 
         env_vars = { "CONFIG0_RESOURCE_SETTINGS_HASH": self.get_config0_resource_settings() }
 
-        return self.resource_settings.get_inputargs(env_vars=env_vars)
+        return self.config0_resource.get_inputargs(env_vars=env_vars)
 
     def get_output_inputargs(self):
 
-        return self.resource_settings.get_output_inputargs()
+        return self.config0_resource.get_output_inputargs()
 
 def run(stackargs):
 
@@ -471,14 +457,13 @@ def run(stackargs):
     if stack.get_attr("resource_output_prefix_key"):
         inputargs["resource_output_prefix_key"] = stack.resource_output_prefix_key
 
-    tfexecutor = TFExecutor(**inputargs)
+    tfconfig = TFConfigScope(**inputargs)
 
-    exec_inputargs = tfexecutor.get_execgroup_inputargs()
+    exec_inputargs = tfconfig.get_execgroup_inputargs()
     stack.cloud_resource.insert(**exec_inputargs)
 
     if stack.get_attr("publish_to_saas") and inputargs.get("resource_output_keys"):
-        output_inputargs = tfexecutor.get_output_inputargs()
+        output_inputargs = tfconfig.get_output_inputargs()
         stack.output_resource_to_ui.insert(display=True,**output_inputargs)
 
     return stack.get_results()
-
