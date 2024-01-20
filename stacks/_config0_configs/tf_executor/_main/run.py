@@ -48,30 +48,30 @@ class RunCommon(object):
     def __init__(self,stack):
         self.classname = "RunCommon"
         self.stack = stack
-        self.env_vars = []
-        self.get_common_env_vars()
+        self.env_vars = self.get_common_env_vars()
 
     def get_common_env_vars(self):
 
-        self.env_vars["STATEFUL_ID"] = self.stack.stateful_id
-        self.env_vars["METHOD"] = "create"
+        env_vars = { "STATEFUL_ID": self.stack.stateful_id,
+                     "METHOD": "create" }
 
         if self.stack.get_attr("remote_stateful_bucket") not in ["null", None]:
-            self.env_vars["REMOTE_STATEFUL_BUCKET"] = self.stack.remote_stateful_bucket
+            env_vars["REMOTE_STATEFUL_BUCKET"] = self.stack.remote_stateful_bucket
 
         if self.stack.get_attr("timeout"):
-            self.env_vars["TIMEOUT"] = self.stack.timeout
+            env_vars["TIMEOUT"] = self.stack.timeout
 
+        return env_vars
 
-        keys  = {
-            "tmp_bucket",
-            "log_bucket",
-            "app_dir",
-            "stateful_id",
-            "remote_stateful_bucket",
-            "run_share_dir",
-            "share_dir"
-        }
+        #keys  = {
+        #    "tmp_bucket",
+        #    "log_bucket",
+        #    "app_dir",
+        #    "stateful_id",
+        #    "remote_stateful_bucket",
+        #    "run_share_dir",
+        #    "share_dir"
+        #}
 
     # this env vars is for the stack and execgroup execution
     # we need to specify create which will then
