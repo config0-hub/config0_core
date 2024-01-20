@@ -1,7 +1,7 @@
 import os
 import json
 from config0_publisher.loggerly import Config0Logger
-from config0_publisher.utilities import print_json
+from config0_publisher.utilities import print_json)
 
 # ref/revisit 543524
 #def _get_default_phase_parameters():
@@ -143,6 +143,8 @@ class TFRuntime(RunCommon):
 
         # ref 4532643623642
         if kwargs.get("runtime_env_vars"):
+            # testtest456
+            print("a"*32)
             self.env_vars.update(kwargs["runtime_env_vars"])
             self.validate_env_vars(include_num=True)
 
@@ -198,6 +200,7 @@ class Config0Resource(RunCommon):
             self.values = {}
 
         if kwargs.get("resource_env_vars"):
+            print("b"*32)
             self.env_vars.update(kwargs["resource_env_vars"])
             self.validate_env_vars(include_num=False)
 
