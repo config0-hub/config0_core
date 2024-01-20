@@ -1,7 +1,7 @@
 import os
 import json
 from config0_publisher.loggerly import Config0Logger
-from config0_publisher.utilities import print_json)
+from config0_publisher.utilities import print_json
 
 # ref/revisit 543524
 #def _get_default_phase_parameters():
