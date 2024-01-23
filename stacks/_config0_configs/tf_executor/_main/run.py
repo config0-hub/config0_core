@@ -437,7 +437,7 @@ class TFConfigHelper(object):
         tf_configs = {
             "tf_vars":self.tf_vars,
             "tf_version": self.tf_version,
-            "terraform_type":self.type
+            "terraform_type":self.type,
             "resource_configs":{}
         }
 
