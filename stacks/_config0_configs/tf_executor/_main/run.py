@@ -154,9 +154,10 @@ class CmEnvVars(object):
             env_vars = {}
 
         # testtest456
-        print("0"*32)
-        print(env_vars)
-        print(type(env_vars))
+        self.stack.logger.debug("0"*32)
+        self.stack.logger.debug(env_vars)
+        self.stack.logger.debug(type(env_vars))
+
         self.update(env_vars)
 
     def update(self,env_vars=None):
@@ -255,9 +256,12 @@ class TFRuntime(object):
 
         # ref 4532643623642
         if self.stack.get_attr("runtime_env_vars"):
-            print("1" * 32)
-            print(self.stack.get_attr("runtime_env_vars"))
-            print(type(self.stack.get_attr("runtime_env_vars")))
+
+            # testtest456
+            self.stack.logger.debug("1" * 32)
+            self.stack.logger.debug(self.stack.get_attr("runtime_env_vars"))
+            self.stack.logger.debug(type(self.stack.get_attr("runtime_env_vars")))
+
             self.env_vars.update(self.stack.runtime_env_vars)
 
         # cloud specific variables storage
@@ -274,7 +278,7 @@ class TFRuntime(object):
 
     def _set_misc(self):
 
-        self.docker_runtime = self.stack.docker_runtime
+        #self.docker_runtime = self.stack.docker_runtime
 
         self.env_vars["RESOURCE_TAGS"] = "{},{}".format(self.stack.resource_type,
                                                         self.stack.resource_name)
@@ -352,7 +356,7 @@ class Config0Resource(object):
         self.values["resource_type"] = self.type
         self.values["name"] = self.name
         self.values["provider"] = self.provider
-        self.values["docker_runtime"] = self.tf_runtime.docker_runtime
+        self.values["docker_runtime"] = self.stack.docker_runtime
 
     def get_inputargs(self):
 
