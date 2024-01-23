@@ -153,6 +153,10 @@ class CmEnvVars(object):
         except:
             env_vars = {}
 
+        # testtest456
+        print("0"*32)
+        print(env_vars)
+        print(type(env_vars))
         self.update(env_vars)
 
     def update(self,env_vars=None):
@@ -251,6 +255,9 @@ class TFRuntime(object):
 
         # ref 4532643623642
         if self.stack.get_attr("runtime_env_vars"):
+            print("1" * 32)
+            print(self.stack.get_attr("runtime_env_vars"))
+            print(type(self.stack.get_attr("runtime_env_vars")))
             self.env_vars.update(self.stack.runtime_env_vars)
 
         # cloud specific variables storage
