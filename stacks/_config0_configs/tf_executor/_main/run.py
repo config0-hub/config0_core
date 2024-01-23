@@ -272,8 +272,10 @@ class TFRuntime(object):
                              include_num=True)
 
     def _add_aws_runtime(self):
+
         if not self.stack.get_attr("ssm_name"):
             return
+
         self.env_vars["SSM_NAME"] = self.stack.ssm_name
 
     def _set_misc(self):
@@ -605,7 +607,6 @@ def run(stackargs):
     #                         tags="resource,docker",
     #                         types="str")
 
-
     # publish_resource -> output_resource_to_ui
     stack.add_substack('config0-publish:::output_resource_to_ui')
 
@@ -619,21 +620,6 @@ def run(stackargs):
                         "cloud_resource")
 
     stack.reset_execgroups()
-
-    inputargs = { "docker_runtime":stack.docker_runtime,
-                  "provider": stack.provider,
-                  "stateful_id": stack.stateful_id,
-                  "execgroup_ref": stack.execgroup_ref,
-                  "resource_name": stack.resource_name,
-                  "resource_type": stack.resource_type,
-                  "terraform_type": stack.terraform_type,
-                  "stack":stack }
-
-    if stack.remote_stateful_bucket:
-        inputargs["remote_stateful_bucket"] = stack.remote_stateful_bucket
-
-    if stack.get_attr("ssm_name"):
-        inputargs["ssm_name"] = stack.ssm_name
 
     ############################################################################################
     # ref/revisit 543524
@@ -649,9 +635,8 @@ def run(stackargs):
 
     # terraform variables
     if stack.get_attr("tf_vars_hash"):
-        inputargs["tf_vars"] = stack.b64_decode(stack.tf_vars_hash)
         stack.set_variable("tf_vars",
-                           inputargs["tf_vars"])
+                           stack.b64_decode(stack.tf_vars_hash))
 
     if not stack.get_attr("tf_version"):
         try:
@@ -665,20 +650,17 @@ def run(stackargs):
     # terraform executor runtime environment variables
     # e.g. Codebuild, Lambda, Docker Container
     if stack.get_attr("runtime_env_vars_hash"):
-        inputargs["runtime_env_vars"] = stack.b64_decode(stack.runtime_env_vars)
         stack.set_variable("runtime_env_vars",
-                           inputargs["runtime_env_vars"])
+                           stack.b64_decode(stack.runtime_env_vars_hash))
 
     # configures config0 resource db
     # e.g. values, env_vars, query keys, add_keys, remove_keys, map_keys, etc.
-    inputargs["resource_configs"] = stack.b64_decode(stack.resource_configs_hash)
     stack.set_variable("resource_configs",
-                       inputargs["resource_configs"])
+                       stack.b64_decode(stack.resource_configs_hash))
 
-    tfconfig = TFConfigHelper(**inputargs)
-
-    exec_inputargs = tfconfig.get_execgroup_inputargs()
-    stack.cloud_resource.insert(**exec_inputargs)
+    tfconfig = TFConfigHelper(stack)
+    inputargs = tfconfig.get_execgroup_inputargs()
+    stack.cloud_resource.insert(**inputargs)
 
     if stack.get_attr("publish_to_saas") and tfconfig.output_keys:
         output_inputargs = tfconfig.get_output_inputargs()
