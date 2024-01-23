@@ -39,63 +39,160 @@ from config0_publisher.utilities import print_json
 #
 #    return phases_params
 
-class RunCommon(object):
+class CmEnvVars(object):
 
     '''
     some common methods to be inherited
     '''
 
     def __init__(self,stack):
-        self.classname = "RunCommon"
+
+        self.classname = "CmEnvVars"
         self.stack = stack
-        self.env_vars = self.get_common_env_vars()
+        self.env_vars = {}
 
-    def get_common_env_vars(self):
+        # ref/revisit 543524
+        # phases working with tag 0.103
+        self.common_keys = [
+            "TMP_BUCKET",
+            "LOG_BUCKET",
+            "APP_DIR",
+            "STATEFUL_DIR",
+            "STATEFUL_ID"
+            "REMOTE_STATEFUL_BUCKET",
+            "RUN_SHARE_DIR",
+            "SHARE_DIR",
+            "METHOD",
+            "CONFIG0_RESOURCE_JSON_FILE",
+            "CONFIG0_PHASES_JSON_FILE",
+            "PHASES_PARAMS_HASH",
+            "SCHEDULE_ID",
+            "RUN_ID",
+            "JOB_INSTANCE_ID",
+            "TIMEOUT"
+        ]
 
-        env_vars = { "STATEFUL_ID": self.stack.stateful_id,
-                     "METHOD": "create" }
+        self.standard_codebuild_keys = [
+            "BUILD_TIMEOUT",
+            "BUILD_IMAGE",
+            "COMPUTE_TYPE",
+            "IMAGE_TYPE",
+            "CODEBUILD_BASENAME"
+            ]
 
-        if self.stack.get_attr("remote_stateful_bucket") not in ["null", None]:
-            env_vars["REMOTE_STATEFUL_BUCKET"] = self.stack.remote_stateful_bucket
+        self.standard_lambda_keys = [
+            "BUILD_TIMEOUT"
+            ]
 
-        if self.stack.get_attr("timeout"):
-            env_vars["TIMEOUT"] = self.stack.timeout
+        self.env_vars = {}
 
-        return env_vars
+    def _default(self):
 
-        #keys  = {
-        #    "tmp_bucket",
-        #    "log_bucket",
-        #    "app_dir",
-        #    "stateful_id",
-        #    "remote_stateful_bucket",
-        #    "run_share_dir",
-        #    "share_dir"
-        #}
+        return {
+            "TIMEOUT": "600"
+        }
 
-    # this env vars is for the stack and execgroup execution
-    # we need to specify create which will then
-    # pass it to the docker container
-    ##############################################
-    # ref/revisit 543524
-    # phases working with tag 0.103
-    # but needs more testing
-    # phases params in stack
-    # if self.phases_params_hash:
-    #    self.env_vars["PHASES_PARAMS_HASH"] = self.phases_params_hash  # send to tf resource_wrapper
-    ##############################################
+    def _default_codebuild(self):
 
-    #"build_image",
-    #"image_type",
-    #"compute_type",
-    #"codebuild_basename",
+        return {
+            "AWS_REGION": "us-east-1",
+            "BUILD_IMAGE": "aws/codebuild/standard:4.0",
+            "COMPUTE_TYPE": "BUILD_GENERAL1_SMALL",
+            "IMAGE_TYPE": "LINUX_CONTAINER",
+            "CODEBUILD_BASENAME":"config0-iac",
+            "BUILDSPEC_FILE": "buildspec.yml"
+        }
 
-    def validate_env_vars(self,include_num=None):
+    def _default_lambda(self):
 
-        if not self.env_vars.items():
+        return {
+            "AWS_REGION": "us-east-1",
+            "LAMBDA_FUNCTION_NAME": "config0-iac"
+        }
+
+    def add(self,keys,default_values=None,clobber=False):
+
+        for key in keys:
+
+            if key in self.env_vars and not clobber:
+                continue
+
+            if self.stack.get_attr(key.lower()):
+                self.env_vars[key] = self.stack.get_attr(key.lower())
+            elif os.environ.get(key):
+                self.env_vars[key] = os.environ[key]
+            elif key in default_values:
+                self.env_vars[key] = default_values[key]
+
+    def set_lambda(self,reset=False):
+
+        if reset:
+            self.reset()
+        self.add(self.standard_lambda_keys,
+                 self._default_lambda())
+    def set_codebuild(self,reset=False):
+
+        if reset:
+            self.reset()
+        self.add(self.standard_codebuild_keys,
+                 self._default_codebuild())
+
+        if "BUILD_TIMEOUT" not in self.env_vars:
+            try:
+               self.env_vars["BUILD_TIMEOUT"] = str(int(self.env_vars["TIMEOUT"]) - 60)
+            except:
+               self.env_vars["BUILD_TIMEOUT"] = self.env_vars["TIMEOUT"]
+
+    def set_resource(self,reset=False):
+
+        if reset:
+            self.reset()
+
+        try:
+            env_vars = self.stack.resource_configs["env_vars"]
+        except:
+            env_vars = {}
+
+        self.update(env_vars)
+
+    def update(self,env_vars=None):
+
+        if not env_vars:
             return
 
-        for _key,_value in self.env_vars.items():
+        for key,value in env_vars.items():
+            if key.upper() in self.env_vars:
+                continue
+            self.env_vars[key.upper()] = value
+
+    def set_common(self,reset=False):
+
+        if reset:
+            self.reset()
+
+        self.add(self.common_keys,
+                 self._default())
+
+    def set_all(self,reset=False):
+
+        if reset:
+            self.reset()
+
+        self.set_resource()
+        self.set_common()
+        self.set_codebuild()
+        self.set_lambda()
+        self.validate()
+
+    def reset(self):
+        self.env_vars = {}
+
+    def validate(self,env_vars=None,include_num=None):
+
+        if not env_vars:
+            env_vars = self.env_vars
+
+        for _key,_value in env_vars.items():
 
             if include_num:
                 try:
@@ -104,59 +201,78 @@ class RunCommon(object):
                     number_value = None
 
                 if number_value:
-                    self.env_vars[_key] = "{}".format(_value)
+                    env_vars[_key] = "{}".format(_value)
                     continue
 
             if _value is True:
-                self.env_vars[_key] = "True"
+                env_vars[_key] = "True"
             elif _value is False:
-                self.env_vars[_key] = "False"
+                env_vars[_key] = "False"
             elif _value is None:
-                self.env_vars[_key] = "None"
-    def insert_env_vars(self,env_vars,include_num=None):
+                env_vars[_key] = "None"
 
-        if not env_vars:
+    def insert(self,env_vars=None,add_env_vars=None,include_num=None):
+
+        # this env vars is for the stack and execgroup execution
+        # we need to specify create which will then
+
+        if not add_env_vars:
             return
 
-        for _key,_value in env_vars.items():
+        if not env_vars:
+            env_vars = self.env_vars
 
-            if _key in self.env_vars:
+        for _key,_value in add_env_vars.items():
+
+            if _key in env_vars:
                 continue
 
-            self.env_vars[_key] = _value
+            env_vars[_key] = _value
 
-        self.validate_env_vars(include_num=include_num)
+        self.validate(env_vars,
+                      include_num=include_num)
 
-class TFRuntime(RunCommon):
+class TFRuntime(object):
 
     '''
     The runtimes include AWS Codebuild, Lambda function, or docker container
     to execute the Terraform/OpenTofu code
     '''
 
-    def __init__(self,**kwargs):
+    def __init__(self,stack):
 
-        RunCommon.__init__(self,
-                           stack=kwargs['stack'])
+        self.stack = stack
 
-        self.docker_runtime = kwargs.get("docker_runtime")
+        self.cmvars = CmEnvVars(stack=stack)
+        self.cmvars.set_common()
+        self.cmvars.set_lambda()
+        self.cmvars.set_codebuild()
+        self.env_vars = self.cmvars.env_vars
 
         # ref 4532643623642
-        if kwargs.get("runtime_env_vars"):
-            # testtest456
-            print("a"*32)
-            self.env_vars.update(kwargs["runtime_env_vars"])
-            self.validate_env_vars(include_num=True)
+        if self.stack.get_attr("runtime_env_vars"):
+            self.env_vars.update(self.stack.runtime_env_vars)
 
-        self.add_aws_runtime()
+        # cloud specific variables storage
+        self._add_aws_runtime()
+        self._set_misc()
 
-        self.configs = { "env_vars":self.env_vars }
-    def add_aws_runtime(self):
+        self.cmvars.validate(self.env_vars,
+                             include_num=True)
 
-        if self.stack.get_attr("ssm_name"):
-            self.env_vars["SSM_NAME"] = self.stack.ssm_name
+    def _add_aws_runtime(self):
+        if not self.stack.get_attr("ssm_name"):
+            return
+        self.env_vars["SSM_NAME"] = self.stack.ssm_name
 
-class Config0Resource(RunCommon):
+    def _set_misc(self):
+
+        self.docker_runtime = self.stack.docker_runtime
+
+        self.env_vars["RESOURCE_TAGS"] = "{},{}".format(self.stack.resource_type,
+                                                        self.stack.resource_name)
+
+class Config0Resource(object):
 
     '''
     This variables and settings to insert the resource, which
@@ -165,47 +281,64 @@ class Config0Resource(RunCommon):
     to interact with Config0 resource db
     '''
 
-    def __init__(self,**kwargs):
+    def __init__(self,stack):
 
-        RunCommon.__init__(self,
-                           stack=kwargs['stack'])
+        self.stack = stack
 
         # set additional vars
-        self.provider = kwargs["provider"]
-        self.type = kwargs["resource_type"]
-        self.name = kwargs["resource_name"]
-        self.tf_vars = kwargs.get("tf_vars")
+        self.provider = stack.provider
+        self.type = stack.resource_type
+        self.name = stack.resource_name
 
         # ref/revisit 543524
         #self.phases_params = self.stack.get_attr("phases_params")
         #self.phases_params_hash = self.stack.get_attr("phases_params_hash")
 
-        if kwargs.get("resource_output_keys"):
-            self.output_keys = kwargs["resource_output_keys"]
+        self._parse_resource_configs()
+        self._set_env_vars()
+        self._set_base_values()
 
-            self.output_keys.extend( [ "remote_stateful_location",
-                                       "docker_runtime" ] )
+        self.tf_runtime = TFRuntime(self.stack)
 
+    def _parse_resource_configs(self):
+
+        resource_configs = self.stack.resource_configs
+
+        if resource_configs.get("output_keys"):
+            self.output_keys = resource_configs["output_keys"]
         else:
             self.output_keys = []
 
-        if kwargs.get("resource_prefix_key"):
-            self.output_prefix_key = kwargs["resource_output_prefix_key"]
+        self.output_keys.extend([
+            "remote_stateful_location",
+            "docker_runtime"]
+        )
+
+        if resource_configs.get("output_prefix_key"):
+            self.output_prefix_key = resource_configs["output_prefix_key"]
         else:
             self.output_prefix_key = self.name
 
-        if kwargs.get("resource_values"):
-            self.values = kwargs["resource_values"]
+        if resource_configs.get("values"):
+            self.values = resource_configs["values"]
         else:
             self.values = {}
 
-        if kwargs.get("resource_env_vars"):
-            print("b"*32)
-            self.env_vars.update(kwargs["resource_env_vars"])
-            self.validate_env_vars(include_num=False)
+        # this is include in cmvars -> set_resource
+        #try:
+        #    self.env_vars = self.stack.resource_configs["env_vars"]
+        #except:
+        #    self.env_vars = {}
 
-        self.tf_runtime = TFRuntime(**kwargs)
-        self._set_base_values()
+    def _set_env_vars(self):
+
+        cmvars = CmEnvVars(stack=self.stack)
+        cmvars.set_common()
+        cmvars.set_resource()
+        self.env_vars = cmvars.env_vars
+
+        cmvars.validate(self.env_vars,
+                        include_num=False)
 
     def _set_base_values(self):
 
@@ -214,18 +347,18 @@ class Config0Resource(RunCommon):
         self.values["provider"] = self.provider
         self.values["docker_runtime"] = self.tf_runtime.docker_runtime
 
-    def get_inputargs(self,env_vars):
-
-        self.insert_env_vars(env_vars)
+    def get_inputargs(self):
 
         human_description = "Creating name {} type {}".format(self.name,
                                                               self.type)
-        
-        inputargs = {"display": True,
-                     "env_vars": json.dumps(self.env_vars),  # self._set_base_values
-                     "name": self.name,
-                     "human_description": human_description,
-                     "stateful_id": self.stack.stateful_id}
+
+        inputargs = {
+            "display": True,
+            "env_vars": json.dumps(self.env_vars),
+            "name": self.name,
+            "human_description": human_description,
+            "stateful_id": self.stack.stateful_id
+        }
 
         if self.stack.get_attr("ssm_name"):
             inputargs["ssm_name"] = self.stack.ssm_name
@@ -234,7 +367,7 @@ class Config0Resource(RunCommon):
         #if self.phases_params:
         #    inputargs["phases_params"] = self.phases_params
 
-        if self.stack.get_attr("remote_stateful_bucket") not in ["null", None]:
+        if self.stack.remote_stateful_bucket:
             inputargs["remote_stateful_bucket"] = self.stack.remote_stateful_bucket
 
         if self.stack.get_attr("timeout"):
@@ -249,82 +382,112 @@ class Config0Resource(RunCommon):
         if not self.output_keys:
             return
 
-        overide_values = { "name":self.name,
-                           "resource_type":self.type,
-                           "ref_schedule_id":self.stack.schedule_id,
-                           "publish_keys_hash":self.stack.b64_encode(self.output_keys) }
+        overide_values = {
+            "name":self.name,
+            "resource_type":self.type,
+            "ref_schedule_id":self.stack.schedule_id,
+            "publish_keys_hash":self.stack.b64_encode(self.output_keys)
+        }
 
         if self.output_prefix_key:
             overide_values["prefix_key"] = self.output_prefix_key
 
-        inputargs = {"overide_values": overide_values,
-                     "automation_phase": "infrastructure",
-                     "human_description": 'Output resource name "{}" type "{}"'.format(self.name,
-                                                                                       self.type)}
+        return {
+            "overide_values": overide_values,
+            "automation_phase": "infrastructure",
+            "human_description": 'Output resource name "{}" type "{}"'.format(self.name,
+                                                                              self.type)
+        }
 
-        return inputargs
-
-class TFConfigScope(object):
+class TFConfigHelper(object):
 
     '''
     The Terraform Execution Helper that helps organize and manage
     things like TF vars that are used to create terraform.tfvars file
     '''
-    def __init__(self,**kwargs):
+    def __init__(self,stack):
 
-        self.classname = 'TFConfigScope'
+        self.classname = 'TFConfigHelper'
         self.logger = Config0Logger(self.classname)
         self.logger.debug("Instantiating %s" % self.classname)
 
-        self.stack = kwargs["stack"]
-        self.type = kwargs["terraform_type"]
-        self.resource_configs = kwargs["resource_configs"]
+        self.stack = stack
+        self.type = self.stack.terraform_type
+        self.resource_configs = self.stack.resource_configs
+        self.tf_version = self.stack.tf_version
 
         self.stack.verify_variables()
 
-        # init vars
-        if kwargs.get("tf_vars"):
-            self.tf_vars = kwargs["tf_vars"]
+        if self.stack.get_attr("tf_vars"):
+            self.tf_vars = self.stack.tf_vars
         else:
             self.tf_vars = {}
 
-        self.config0_resource = Config0Resource(**kwargs)
+        self.config0_resource = Config0Resource(self.stack)
 
     def _get_tf_configs(self):
 
         if self.stack.get_attr("cloud_tags_hash"):
-
             self.tf_vars["cloud_tags"] = {
                 "value":json.dumps(self.stack.b64_decode(self.stack.cloud_tags_hash)),
                 "type": "dict",
                 "key": "cloud_tags"
             }
 
-        return {
+        tf_configs = {
             "tf_vars":self.tf_vars,
-            "terraform_type":self.type,
-            "resource_configs": self.resource_configs
+            "tf_version": self.tf_version,
+            "terraform_type":self.type
+            "resource_configs":{}
         }
 
-    def get_config0_config0_resource(self):
+        keys_to_include = [
+            "output_keys",
+            "output_prefix_key"
+        ]
 
-        self.config0_resource.tf_runtime.configs["env_vars"]["RESOURCE_TAGS"] = "{},{}".format(self.config0_resource.type,
-                                                                                              self.config0_resource.name)
+        for key in keys_to_include:
+            if not self.stack.resource_configs.get(key):
+                continue
+            tf_configs[key] = self.stack.resource_configs[key]
 
-        expression = "self.config0_resource.set_{}()".format(self.config0_resource.provider)
+        keys_to_include = [
+            "include_raw",
+            "include_keys",
+            "exclude_keys",
+            "map_keys"
+        ]
 
-        try:
-            exec(expression)
-        except:
-            self.logger.warn("could not execute {} for the provider".format(expression))
+        for key in keys_to_include:
+            if not self.stack.resource_configs.get(key):
+                continue
+            tf_configs["resource_configs"][key] = self.stack.resource_configs[key]
 
-        # ref 4353453246
+        return tf_configs
+
+    def get_config0_resource(self):
+
+        cmv_env_vars = CmEnvVars()
+        cmv_env_vars.set_common()
+
+        # testtest456
+        # add drift detection
         _settings = {
-            "provider": self.config0_resource.provider,  # provider e.g. aws, config0, do
-            "resource_type": self.config0_resource.type,  # resource_type e.g. server, rds, load balancer
-            "resource_values": self.config0_resource.values,  # resource values to extend in config0 db
-            "runtime": self.config0_resource.tf_runtime.configs,  # runtime setting to extend tf
-            "terraform": self._get_tf_configs()  # terraform variables and other settings
+            "common_exec_hash": self.stack.b64_encode({
+                "env_vars":cmv_env_vars.env_vars
+            }),  # common env vars
+            "runtime_exec_hash": self.stack.b64_encode({
+                "env_vars":self.config0_resource.tf_runtime.env_vars,
+                "exec_runtime": self.stack.exec_runtime,
+                "tf_configs": self._get_tf_configs()  # terraform variables and other settings
+            }),  # runtime: e.g. Codebuild/Lambda
+            "resource_exec_hash": self.stack.b64_encode({
+                "env_vars":self.config0_resource.env_vars,
+                "method":self.config0_resource.env_vars["METHOD"],
+                "provider":self.config0_resource.provider,  # provider e.g. aws, config0, do
+                "type": self.config0_resource.type,  # resource_type e.g. server, rds, load balancer
+                "values": self.config0_resource.values
+            })   # when executing config0 resource
         }
 
         if os.environ.get("DEBUG_STACK"):
@@ -333,13 +496,11 @@ class TFConfigScope(object):
         return self.stack.b64_encode(_settings)
 
     def get_execgroup_inputargs(self):
-
-        env_vars = { "CONFIG0_RESOURCE_SETTINGS_HASH": self.get_config0_config0_resource() }
-
-        return self.config0_resource.get_inputargs(env_vars=env_vars)
+        # add the main env var
+        self.config0_resource.env_vars["CONFIG0_RESOURCE_SETTINGS_HASH"] = self.get_config0_resource()
+        return self.config0_resource.get_inputargs()
 
     def get_output_inputargs(self):
-
         return self.config0_resource.get_output_inputargs()
 
 def run(stackargs):
@@ -358,6 +519,25 @@ def run(stackargs):
     stack.parse.add_required(key="resource_type",
                              types="str")
 
+    stack.parse.add_required(key="resource_configs_hash",
+                             types="str")
+
+    #stack.parse.add_optional(key="resource_values_hash",
+    #                         default="null",
+    #                         types="str")
+
+    #stack.parse.add_optional(key="resource_env_vars_hash",
+    #                         default="null",
+    #                         types="str")
+
+    #stack.parse.add_optional(key="resource_output_keys_hash",
+    #                         default="null",
+    #                         types="str")
+
+    #stack.parse.add_optional(key="resource_output_prefix_key",
+    #                         default="null",
+    #                         types="str")
+
     stack.parse.add_required(key="terraform_type",
                              types="str")
 
@@ -365,27 +545,7 @@ def run(stackargs):
                              default="null",
                              types="str")
 
-    stack.parse.add_optional(key="resource_configs_hash",
-                             default="null",
-                             types="str")
-
     stack.parse.add_optional(key="runtime_env_vars",
-                             default="null",
-                             types="str")
-
-    stack.parse.add_optional(key="resource_values_hash",
-                             default="null",
-                             types="str")
-
-    stack.parse.add_optional(key="resource_env_vars_hash",
-                             default="null",
-                             types="str")
-
-    stack.parse.add_optional(key="resource_output_keys_hash",
-                             default="null",
-                             types="str")
-
-    stack.parse.add_optional(key="resource_output_prefix_key",
                              default="null",
                              types="str")
 
@@ -403,6 +563,7 @@ def run(stackargs):
 
     stack.parse.add_optional(key="remote_stateful_bucket",
                              tags="resource,docker",
+                             default="null",
                              types="str,null")
 
     stack.parse.add_optional(key="publish_to_saas",
@@ -411,6 +572,17 @@ def run(stackargs):
 
     stack.parse.add_optional(key="docker_runtime",
                              default="elasticdev/terraform-run-env:1.3.7",
+                             types="str")
+
+    stack.parse.add_optional(key="tf_version",
+                             default="null",
+                             types="str")
+
+    stack.parse.add_optional(key="exec_runtime",
+                             default="null",
+                             choices=["None,"
+                                      "codebuild",
+                                      "lambda"],
                              types="str")
 
     stack.parse.add_optional(key="ssm_name",
@@ -446,7 +618,7 @@ def run(stackargs):
                   "terraform_type": stack.terraform_type,
                   "stack":stack }
 
-    if stack.get_attr("remote_stateful_bucket") not in ["null", None]:
+    if stack.remote_stateful_bucket:
         inputargs["remote_stateful_bucket"] = stack.remote_stateful_bucket
 
     if stack.get_attr("ssm_name"):
@@ -467,42 +639,37 @@ def run(stackargs):
     # terraform variables
     if stack.get_attr("tf_vars_hash"):
         inputargs["tf_vars"] = stack.b64_decode(stack.tf_vars_hash)
+        stack.set_variable("tf_vars",
+                           inputargs["tf_vars"])
+
+    if not stack.get_attr("tf_version"):
+        try:
+            tf_version = stack.docker_runtime.split(":")[-1]
+        except:
+            tf_version = "1.5.4"
+
+        stack.set_variable("tf_version",
+                           tf_version)
 
     # terraform executor runtime environment variables
     # e.g. Codebuild, Lambda, Docker Container
     if stack.get_attr("runtime_env_vars_hash"):
         inputargs["runtime_env_vars"] = stack.b64_decode(stack.runtime_env_vars)
+        stack.set_variable("runtime_env_vars",
+                           inputargs["runtime_env_vars"])
 
     # configures config0 resource db
-    # e.g. query keys, add_keys, remove_keys, map_keys, etc.
-    # testtest456
-    if stack.get_attr("resource_configs_hash"):
-        inputargs["resource_configs"] = stack.b64_decode(stack.resource_configs_hash)
+    # e.g. values, env_vars, query keys, add_keys, remove_keys, map_keys, etc.
+    inputargs["resource_configs"] = stack.b64_decode(stack.resource_configs_hash)
+    stack.set_variable("resource_configs",
+                       inputargs["resource_configs"])
 
-    # add values to output values from the terraform execution
-    # for the Config0 resource db entry
-    if stack.get_attr("resource_values_hash"):
-        inputargs["resource_values"] = stack.b64_decode(stack.resource_values_hash)
-
-    # env vars to include in the Config0 resource execution
-    # that calls tf runtime executor
-    if stack.get_attr("resource_env_vars_hash"):
-        inputargs["resource_env_vars"] = stack.b64_decode(stack.resource_env_vars_hash)
-
-    # output keys from the resource to display on the UI output section
-    if stack.get_attr("resource_output_keys_hash"):
-        inputargs["resource_output_keys"] = stack.b64_decode(stack.resource_output_keys_hash)
-
-    # prefix for resource output keys to insert
-    if stack.get_attr("resource_output_prefix_key"):
-        inputargs["resource_output_prefix_key"] = stack.resource_output_prefix_key
-
-    tfconfig = TFConfigScope(**inputargs)
+    tfconfig = TFConfigHelper(**inputargs)
 
     exec_inputargs = tfconfig.get_execgroup_inputargs()
     stack.cloud_resource.insert(**exec_inputargs)
 
-    if stack.get_attr("publish_to_saas") and inputargs.get("resource_output_keys"):
+    if stack.get_attr("publish_to_saas") and tfconfig.output_keys:
         output_inputargs = tfconfig.get_output_inputargs()
         stack.output_resource_to_ui.insert(display=True,
                                            **output_inputargs)
