@@ -258,15 +258,7 @@ class TFRuntime(object):
 
         # ref 4532643623642
         if self.stack.get_attr("runtime_env_vars"):
-            # testtest456
-            self.stack.logger.debug("1" * 32)
-            self.stack.logger.debug(self.stack.get_attr("runtime_env_vars"))
-            self.stack.logger.debug(type(self.stack.get_attr("runtime_env_vars")))
             self.env_vars.update(self.stack.runtime_env_vars)
-            self.stack.logger.debug("2" * 32)
-            self.stack.logger.json(self.env_vars)
-            self.stack.logger.debug("2" * 32)
-            raise Exception('yoyoyoyo')
 
         # cloud specific variables storage
         self._add_aws_runtime()
