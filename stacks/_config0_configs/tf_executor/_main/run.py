@@ -662,7 +662,7 @@ def run(stackargs):
     inputargs = tfconfig.get_execgroup_inputargs()
     stack.cloud_resource.insert(**inputargs)
 
-    if stack.get_attr("publish_to_saas") and tfconfig.output_keys:
+    if stack.get_attr("publish_to_saas") and tfconfig.config0_resource.output_keys:
         output_inputargs = tfconfig.get_output_inputargs()
         stack.output_resource_to_ui.insert(display=True,
                                            **output_inputargs)
