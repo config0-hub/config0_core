@@ -77,7 +77,7 @@ class CmEnvVars(object):
             "BUILD_IMAGE",
             "COMPUTE_TYPE",
             "IMAGE_TYPE",
-            "CODEBUILD_BASENAME"
+            "CODEBUILD_BASENAME",
             ]
 
         self.standard_lambda_keys = [
@@ -112,16 +112,17 @@ class CmEnvVars(object):
 
     def add(self,keys,default_values=None,clobber=False):
 
-        for key in keys:
+        if default_values:
+            keys.extend(default_values.keys())
 
+        for key in list(set(keys)):
             if key in self.env_vars and not clobber:
                 continue
-
             if self.stack.get_attr(key.lower()):
                 self.env_vars[key] = self.stack.get_attr(key.lower())
             elif os.environ.get(key):
                 self.env_vars[key] = os.environ[key]
-            elif key in default_values:
+            elif default_values and key in default_values:
                 self.env_vars[key] = default_values[key]
 
     def set_lambda(self,reset=False):
@@ -134,6 +135,7 @@ class CmEnvVars(object):
 
         if reset:
             self.reset()
+
         self.add(self.standard_codebuild_keys,
                  self._default_codebuild())
 
@@ -256,13 +258,15 @@ class TFRuntime(object):
 
         # ref 4532643623642
         if self.stack.get_attr("runtime_env_vars"):
-
             # testtest456
             self.stack.logger.debug("1" * 32)
             self.stack.logger.debug(self.stack.get_attr("runtime_env_vars"))
             self.stack.logger.debug(type(self.stack.get_attr("runtime_env_vars")))
-
             self.env_vars.update(self.stack.runtime_env_vars)
+            self.stack.logger.debug("2" * 32)
+            self.stack.logger.json(self.env_vars)
+            self.stack.logger.debug("2" * 32)
+            raise Exception('yoyoyoyo')
 
         # cloud specific variables storage
         self._add_aws_runtime()
