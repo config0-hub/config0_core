@@ -480,7 +480,7 @@ class TFConfigHelper(object):
 
     def get_config0_resource(self):
 
-        cmv_env_vars = CmEnvVars()
+        cmv_env_vars = CmEnvVars(self.stack)
         cmv_env_vars.set_common()
 
         # testtest456
