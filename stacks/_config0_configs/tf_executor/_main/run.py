@@ -62,7 +62,6 @@ class CmEnvVars(object):
             "REMOTE_STATEFUL_BUCKET",
             "RUN_SHARE_DIR",
             "SHARE_DIR",
-            "METHOD",
             "CONFIG0_RESOURCE_JSON_FILE",
             "CONFIG0_PHASES_JSON_FILE",
             "PHASES_PARAMS_HASH",
@@ -492,7 +491,6 @@ class TFConfigHelper(object):
             }),  # runtime: e.g. Codebuild/Lambda
             "resource_exec_hash": self.stack.b64_encode({
                 "env_vars":self.config0_resource.env_vars,
-                "method":self.config0_resource.env_vars["METHOD"],
                 "provider":self.config0_resource.provider,  # provider e.g. aws, config0, do
                 "type": self.config0_resource.type,  # resource_type e.g. server, rds, load balancer
                 "values": self.config0_resource.values
@@ -650,7 +648,7 @@ def run(stackargs):
                            stack.b64_decode(stack.runtime_env_vars_hash))
 
     # configures config0 resource db
-    # e.g. values, env_vars, query keys, add_keys, remove_keys, map_keys, etc.
+    # e.g. values, env_vars, query keys, add_keys, exclude_keys, map_keys, etc.
     stack.set_variable("resource_configs",
                        stack.b64_decode(stack.resource_configs_hash))
 
