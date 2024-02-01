@@ -68,7 +68,8 @@ class CmEnvVars(object):
             "SCHEDULE_ID",
             "RUN_ID",
             "JOB_INSTANCE_ID",
-            "TIMEOUT"
+            "TIMEOUT",
+            "USE_REMOTE_STATE"
         ]
 
         self.standard_codebuild_keys = [
@@ -137,12 +138,6 @@ class CmEnvVars(object):
 
         self.add(self.standard_codebuild_keys,
                  self._default_codebuild())
-
-        if "BUILD_TIMEOUT" not in self.env_vars:
-            try:
-               self.env_vars["BUILD_TIMEOUT"] = str(int(self.env_vars["TIMEOUT"]) - 60)
-            except:
-               self.env_vars["BUILD_TIMEOUT"] = self.env_vars["TIMEOUT"]
 
     def set_resource(self,reset=False):
 
@@ -332,6 +327,9 @@ class Config0Resource(object):
         else:
             self.values = {}
 
+        if self.stack.get_attr("drift_protection"):
+            self.values["drift_protection"] = True
+
         # this is include in cmvars -> set_resource
         #try:
         #    self.env_vars = self.stack.resource_configs["env_vars"]
@@ -486,7 +484,6 @@ class TFConfigHelper(object):
             }),  # common env vars
             "runtime_exec_hash": self.stack.b64_encode({
                 "env_vars":self.config0_resource.tf_runtime.env_vars,
-                "exec_runtime": self.stack.exec_runtime,
                 "tf_configs": self._get_tf_configs()  # terraform variables and other settings
             }),  # runtime: e.g. Codebuild/Lambda
             "resource_exec_hash": self.stack.b64_encode({
@@ -529,22 +526,6 @@ def run(stackargs):
     stack.parse.add_required(key="resource_configs_hash",
                              types="str")
 
-    #stack.parse.add_optional(key="resource_values_hash",
-    #                         default="null",
-    #                         types="str")
-
-    #stack.parse.add_optional(key="resource_env_vars_hash",
-    #                         default="null",
-    #                         types="str")
-
-    #stack.parse.add_optional(key="resource_output_keys_hash",
-    #                         default="null",
-    #                         types="str")
-
-    #stack.parse.add_optional(key="resource_output_prefix_key",
-    #                         default="null",
-    #                         types="str")
-
     stack.parse.add_required(key="terraform_type",
                              types="str")
 
@@ -581,15 +562,16 @@ def run(stackargs):
                              default="elasticdev/terraform-run-env:1.3.7",
                              types="str")
 
+    stack.parse.add_optional(key="use_remote_state",
+                             default=True,
+                             types="bool,str")
+
+    stack.parse.add_optional(key="drift_protection",
+                             default=True,
+                             types="bool,str")
+
     stack.parse.add_optional(key="tf_version",
                              default="null",
-                             types="str")
-
-    stack.parse.add_optional(key="exec_runtime",
-                             default="null",
-                             choices=["None,"
-                                      "codebuild",
-                                      "lambda"],
                              types="str")
 
     stack.parse.add_optional(key="ssm_name",
