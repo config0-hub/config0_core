@@ -149,11 +149,6 @@ class CmEnvVars(object):
         except:
             env_vars = {}
 
-        # testtest456
-        self.stack.logger.debug("0"*32)
-        self.stack.logger.debug(env_vars)
-        self.stack.logger.debug(type(env_vars))
-
         self.update(env_vars)
 
     def update(self,env_vars=None):
@@ -194,17 +189,14 @@ class CmEnvVars(object):
             env_vars = self.env_vars
 
         for _key,_value in env_vars.items():
-
             if include_num:
                 try:
                     number_value = int(_value)
                 except:
                     number_value = None
-
                 if number_value:
                     env_vars[_key] = "{}".format(_value)
                     continue
-
             if _value is True:
                 env_vars[_key] = "True"
             elif _value is False:
@@ -476,8 +468,6 @@ class TFConfigHelper(object):
         cmv_env_vars = CmEnvVars(self.stack)
         cmv_env_vars.set_common()
 
-        # testtest456
-        # add drift detection
         _settings = {
             "common_exec_hash": self.stack.b64_encode({
                 "env_vars":cmv_env_vars.env_vars
