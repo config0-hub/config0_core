@@ -41,10 +41,6 @@ def run(stackargs):
 
     if stack.get_attr("labels_hash"):
 
-        # testtest456
-        stack.logger.debug("r1"*32)
-        stack.logger.debug("r1"*32)
-
         for _key, value in stack.b64_decode(stack.labels_hash).items():
             key = "label-{}".format(_key)
             match[key] = value
@@ -63,91 +59,49 @@ def run(stackargs):
         raise Exception("resource not found for match {}".format(match))
 
     if stack.get_attr("publish_keys_hash"):
-
-        # testtest456
-        stack.logger.debug("s1"*32)
-        stack.logger.debug("s1"*32)
-
         resource = stack.keys_to_dict(stack.b64_decode(stack.publish_keys_hash),
                                       {}, 
                                       data)
     else:
-
         resource = data
-
-    # testtest456
-    stack.logger.debug("a1"*32)
-    stack.logger.debug("a1"*32)
 
     if not resource:
         stack.logger.warn("resource to publish is empty")
         return stack.get_results()
 
-    stack.logger.debug("a2"*32)
-    stack.logger.debug("a2"*32)
-
     copied_dict = copy.deepcopy(resource)
 
     if stack.get_attr("map_keys_hash"):
-
-        # testtest456
-        stack.logger.debug("t1"*32)
-        stack.logger.debug("t1"*32)
-
         resource = stack.keys_to_dict(stack.b64_decode(stack.publish_keys_hash,
                                       {}, 
                                       data))
     else:
-
         resource = data
-
-    # testtest456
-    stack.logger.debug("a1"*32)
-    stack.logger.debug("a1"*32)
 
     if not resource:
         stack.logger.warn("resource to publish is empty")
         return stack.get_results()
 
-    stack.logger.debug("a2"*32)
-    stack.logger.debug("a2"*32)
-
     copied_dict = copy.deepcopy(resource)
 
     if stack.get_attr("map_keys_hash"):
-        # testtest456
-        stack.logger.debug("u1"*32)
-        stack.logger.debug("u1"*32)
-
         for _key, _map_key in stack.b64_decode(stack.map_keys_hash).items():
-
-            stack.logger.debug("b"*32)
-            stack.logger.debug(_key,_map_key)
-            stack.logger.debug("b"*32)
-
             if _key not in resource:
                 continue
 
             resource[_map_key] = copied_dict[_key]
             del resource[_key]
 
-    stack.logger.debug("a3"*32)
-    stack.logger.debug("a3"*32)
-
     if stack.get_attr("prefix_key"):
 
         for _key,_value in copied_dict.items():
-
-            stack.logger.debug("c"*32)
-            stack.logger.debug(_key,_value)
-            stack.logger.debug("c"*32)
-
             resource["{}/{}".format(stack.prefix_key, _key)] = _value
             del resource[_key]
 
-    stack.logger.debug("a4"*32)
-    stack.logger.debug("a4"*32)
+    stack.logger.json(resource)
 
     stack.publish(resource)
+
+    raise Exception("testtest456 - 643535")
 
     return stack.get_results()
