@@ -138,23 +138,6 @@ def run(stackargs):
 
         for _key,_value in copied_dict.items():
 
-            stack.logger.debug("b"*32)
-            stack.logger.debug(_key,_map_key)
-            stack.logger.debug("b"*32)
-
-            if _key not in resource:
-                continue
-
-            resource[_map_key] = copied_dict[_key]
-            del resource[_key]
-
-    stack.logger.debug("a3"*32)
-    stack.logger.debug("a3"*32)
-
-    if stack.get_attr("prefix_key"):
-
-        for _key,_value in copied_dict.items():
-
             stack.logger.debug("c"*32)
             stack.logger.debug(_key,_value)
             stack.logger.debug("c"*32)
