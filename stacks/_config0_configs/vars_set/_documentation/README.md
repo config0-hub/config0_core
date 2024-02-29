@@ -30,6 +30,18 @@ selectors:
      match_params:
        must_exists: True
        resource_type: vpc
+   public_route_table:
+     match_base: aws_base
+     match_keys:
+       public_route_table: true
+     match_params:
+       resource_type: route_table
+   private_route_table:
+     match_base: aws_base
+     match_keys:
+       private_route_table: true
+     match_params:
+       resource_type: route_table
    private_subnet_info:
      match_base: aws_base
      match_keys:
