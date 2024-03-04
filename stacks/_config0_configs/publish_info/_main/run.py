@@ -13,7 +13,8 @@ def run(stackargs):
     #####################################
 
     # Get the host info needed to gather ports
-    host_info = stack.check_resource(name=stack.hostname, must_exists=True)[0]
+    host_info = stack.get_resource(name=stack.hostname,
+                                   must_exists=True)[0]
 
     pipeline_env_var = {}
 
