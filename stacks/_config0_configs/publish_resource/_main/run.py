@@ -99,9 +99,6 @@ def run(stackargs):
             del resource[_key]
 
     stack.logger.json(resource)
-
     stack.publish(resource)
-
-    raise Exception("testtest456 - 643535")
 
     return stack.get_results()
