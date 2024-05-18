@@ -1,0 +1,13 @@
+desc: Fetches contents of host files and publishes it
+release: 0.0.1
+categories: 
+   - config0-core
+   - metadata
+   - host_files
+tags:
+   - config0_run
+   - config0-core
+   - config0
+   - metadata
+   - publish
+   - host_files

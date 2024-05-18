@@ -1,0 +1,14 @@
+desc: creates a variables set 
+release: 0.0.1
+categories: 
+   - config0-core
+   - vars_set
+tags:
+   - config0-core
+   - config0
+   - debug
+   - selectors
+   - labels
+   - vars_set
+   - variables
+   - set
