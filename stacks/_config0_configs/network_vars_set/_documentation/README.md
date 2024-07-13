@@ -4,7 +4,7 @@
 
 | argument      | description                            | var type | default      |
 | ------------- | -------------------------------------- | -------- | ------------ |
-| vars_set_name   | the name of the variables set       | string   |    |
+| network_vars_set_name   | the name of the variables set       | string   |    |
 | env_vars_hash   | environment variables key/value (dict) converted to base64 hash      | string   |    |
 | labels_hash   | query labels key/value (dict) converted to base64 hash      | string   |    |
 | arguments_hash   | arguments key/value (dict) converted to base64 hash      | string   |    |
@@ -89,10 +89,10 @@ selectors:
        must_be_one: True
        resource_type: security_group
 custom:
-   vars_set:
-       stack_name: config0-publish:::vars_set
+   network_vars_set:
+       stack_name: config0-publish:::network_vars_set
        arguments:
-         vars_set_name: vpcinfo_dev
+         network_vars_set_name: vpcinfo_dev
          evaluate: null
          env_vars_hash:
            AWS_DEFAULT_REGION: eu-west-1
