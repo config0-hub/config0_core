@@ -11,9 +11,6 @@ def run(stackargs):
     stack.parse.add_required(key="bucket_key",
                              default="null")
 
-    stack.parse.add_required(key="payload",
-                             default="null")
-
     stack.parse.add_required(key="cluster_id",
                              default="null")
 
@@ -21,6 +18,12 @@ def run(stackargs):
                              default="null")
 
     stack.parse.add_required(key="sched_destroy",
+                             default="null")
+
+    stack.parse.add_optional(key="payload",
+                             default="null")
+
+    stack.parse.add_optional(key="payload_hash",
                              default="null")
 
     # Init the variables
@@ -55,8 +58,16 @@ def run(stackargs):
     human_description = "Report/callback to SaasS schedule_id={}, run_id={}".format(stack.schedule_id,
                                                                                     stack.run_id)
 
-    if stack.get_attr("bucket_key") and stack.get_attr("payload"):
-        stack.add_dict_to_s3(stack.payload,
+
+    if stack.get_attr("payload_hash"):
+        payload = stack.b64_decode(stack.payload_hash)
+    elif stack.get_attr("payload"):
+        payload = stack.payload
+    else:
+        payload = None
+
+    if stack.get_attr("bucket_key") and payload:
+        stack.add_dict_to_s3(payload,
                              bucket_key=stack.bucket_key)
 
     stack.insert_builtin_cmd("execute restapi",
