@@ -326,8 +326,8 @@ class Config0Resource(object):
 
     def get_inputargs(self):
 
-        human_description = "Creating name {} type {}".format(self.name,
-                                                              self.type)
+        human_description = 'creating resource type: "{}" name: "{}"'.format(self.type,
+                                                                             self.name)
 
         inputargs = {
             "display": True,
