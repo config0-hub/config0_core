@@ -98,6 +98,7 @@ class CmEnvVars(object):
             self.reset()
         self.add(self.standard_lambda_keys,
                  self._default_lambda())
+
     def set_codebuild(self,reset=False):
 
         if reset:
@@ -135,17 +136,6 @@ class CmEnvVars(object):
 
         self.add(self.common_keys,
                  self._default())
-
-    def set_all(self,reset=False):
-
-        if reset:
-            self.reset()
-
-        self.set_resource()
-        self.set_common()
-        self.set_codebuild()
-        self.set_lambda()
-        self.validate()
 
     def reset(self):
         self.env_vars = {}
@@ -436,20 +426,20 @@ class TFConfigHelper(object):
 
         return tf_configs
 
-    def _get_config0_resource(self):
+    def _get_config0_resource_exec_settings(self):
 
         cmv_env_vars = CmEnvVars(self.stack)
         cmv_env_vars.set_common()
 
         _settings = {
-            "common_exec_hash": self.stack.b64_encode({
+            "common_runtime_settings_hash": self.stack.b64_encode({
                 "env_vars":cmv_env_vars.env_vars
             }),  # common env vars
-            "runtime_exec_hash": self.stack.b64_encode({
+            "tf_runtime_settings_hash": self.stack.b64_encode({
                 "env_vars":self.config0_resource.tfrun_exec.env_vars,
                 "tf_configs": self._get_tf_configs()  # terraform variables and other settings
             }),  # runtime: e.g. Codebuild/Lambda
-            "resource_exec_hash": self.stack.b64_encode({
+            "resource_runtime_settings_hash": self.stack.b64_encode({
                 "env_vars":self.config0_resource.env_vars,
                 "provider":self.config0_resource.provider,  # provider e.g. aws, config0, do
                 "type": self.config0_resource.type,  # resource_type e.g. server, rds, load balancer
@@ -460,11 +450,14 @@ class TFConfigHelper(object):
         if os.environ.get("DEBUG_STACK"):
             print_json(_settings)
 
-        return self.stack.b64_encode(_settings)
+        return _settings
 
     def get_execgroup_inputargs(self):
+
         # add the main env var
-        self.config0_resource.env_vars["CONFIG0_RESOURCE_SETTINGS_HASH"] = self._get_config0_resource()
+        _settings = self._get_config0_resource_exec_settings()
+        self.config0_resource.env_vars["CONFIG0_RESOURCE_EXEC_SETTINGS_HASH"] = self.stack.b64_encode(_settings)
+
         return self.config0_resource.get_inputargs()
 
     def get_output_inputargs(self):
