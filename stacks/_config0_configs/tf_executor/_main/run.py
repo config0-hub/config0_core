@@ -33,10 +33,8 @@ class CmEnvVars(object):
             "RUN_ID",
             "JOB_INSTANCE_ID",
             "TIMEOUT",
-            "USE_REMOTE_STATE",
-            "TF_RUNTIME",
-            "TF_BINARY",
-            "TF_VERSION"
+            "CREATE_REMOTE_STATE",
+            "TF_RUNTIME"
         ]
 
         self.standard_codebuild_keys = [
@@ -198,6 +196,8 @@ class TFRunExec(object):
         self.cmvars.set_common()
         self.cmvars.set_lambda()
         self.cmvars.set_codebuild()
+
+        # transfer the common vars here
         self.env_vars = self.cmvars.env_vars
 
         # ref 4532643623642
@@ -206,7 +206,6 @@ class TFRunExec(object):
 
         # cloud specific variables storage
         self._add_aws_runtime()
-        self._set_misc()
 
         self.cmvars.validate(self.env_vars,
                              include_num=True)
@@ -239,11 +238,6 @@ class TFRunExec(object):
             return
 
         self.env_vars["SSM_NAME"] = self.stack.ssm_name
-
-    def _set_misc(self):
-
-        self.env_vars["RESOURCE_TAGS"] = "{},{}".format(self.stack.resource_type,
-                                                        self.stack.resource_name)
 
 class Config0Resource(object):
 
@@ -424,17 +418,31 @@ class TFConfigHelper(object):
                 continue
             tf_configs["resource_configs"][key] = self.stack.resource_configs[key]
 
+        self._add_provider_map_keys(tf_configs)
+
         return tf_configs
+
+    def _add_provider_map_keys(self,tf_configs):
+
+        try:
+            if self.stack.get_attr("provider") == "aws":
+                tf_configs["resource_configs"]["map_keys"] = {
+                    "region": "aws_default_region"
+                }
+        except:
+            self.logger.debug("could not add map keys for aws")
+
+        try:
+            if self.stack.get_attr("provider") == "aws":
+                tf_configs["resource_configs"]["map_keys"] = {
+                    "region": "do_region"
+                }
+        except:
+            self.logger.debug("could not add map keys for do")
 
     def _get_config0_resource_exec_settings(self):
 
-        cmv_env_vars = CmEnvVars(self.stack)
-        cmv_env_vars.set_common()
-
         _settings = {
-            "common_runtime_settings_hash": self.stack.b64_encode({
-                "env_vars":cmv_env_vars.env_vars
-            }),  # common env vars
             "tf_runtime_settings_hash": self.stack.b64_encode({
                 "env_vars":self.config0_resource.tfrun_exec.env_vars,
                 "tf_configs": self._get_tf_configs()  # terraform variables and other settings
@@ -518,7 +526,7 @@ def run(stackargs):
                              default="tofu:1.6.2",
                              types="str")
 
-    stack.parse.add_optional(key="use_remote_state",
+    stack.parse.add_optional(key="create_remote_state",
                              default=True,
                              types="bool,str")
 
