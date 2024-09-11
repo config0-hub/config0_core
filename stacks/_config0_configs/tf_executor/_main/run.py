@@ -433,7 +433,7 @@ class TFConfigHelper(object):
             self.logger.debug("could not add map keys for aws")
 
         try:
-            if self.stack.get_attr("provider") == "aws":
+            if self.stack.get_attr("provider") == "do":
                 tf_configs["resource_configs"]["map_keys"] = {
                     "region": "do_region"
                 }
