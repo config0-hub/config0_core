@@ -94,6 +94,7 @@ class CmEnvVars(object):
 
         if reset:
             self.reset()
+
         self.add(self.standard_lambda_keys,
                  self._default_lambda())
 
@@ -205,7 +206,7 @@ class TFRunExec(object):
             self.env_vars.update(self.stack.runtime_env_vars)
 
         # cloud specific variables storage
-        self._add_aws_runtime()
+        self._add_aws_ssm()
 
         self.cmvars.validate(self.env_vars,
                              include_num=True)
@@ -232,7 +233,7 @@ class TFRunExec(object):
         self.stack.set_variable("tf_runtime",
                                 f'{_tf_binary}:{_tf_version}')
 
-    def _add_aws_runtime(self):
+    def _add_aws_ssm(self):
 
         if not self.stack.get_attr("ssm_name"):
             return
@@ -410,7 +411,7 @@ class TFConfigHelper(object):
             "include_raw",
             "include_keys",
             "exclude_keys",
-            "map_keys"
+            "maps"
         ]
 
         for key in keys_to_include:
@@ -418,27 +419,27 @@ class TFConfigHelper(object):
                 continue
             tf_configs["resource_configs"][key] = self.stack.resource_configs[key]
 
-        self._add_provider_map_keys(tf_configs)
+        self._add_provider_maps(tf_configs)
 
         return tf_configs
 
-    def _add_provider_map_keys(self,tf_configs):
+    def _add_provider_maps(self,tf_configs):
 
-        try:
-            if self.stack.get_attr("provider") == "aws":
-                tf_configs["resource_configs"]["map_keys"] = {
+        if self.stack.get_attr("provider") == "aws":
+            try:
+                tf_configs["resource_configs"]["maps"] = {
                     "region": "aws_default_region"
                 }
-        except:
-            self.logger.debug("could not add map keys for aws")
+            except:
+                self.logger.debug("could not add map keys for aws")
 
-        try:
-            if self.stack.get_attr("provider") == "do":
-                tf_configs["resource_configs"]["map_keys"] = {
+        if self.stack.get_attr("provider") == "do":
+            try:
+                tf_configs["resource_configs"]["maps"] = {
                     "region": "do_region"
                 }
-        except:
-            self.logger.debug("could not add map keys for do")
+            except:
+                self.logger.debug("could not add map keys for do")
 
     def _get_config0_resource_exec_settings(self):
 
@@ -564,7 +565,7 @@ def run(stackargs):
                            stack.b64_decode(stack.runtime_env_vars_hash))
 
     # configures config0 resource db
-    # e.g. values, env_vars, query keys, add_keys, exclude_keys, map_keys, etc.
+    # e.g. values, env_vars, query keys, add_keys, exclude_keys, maps, etc.
     stack.set_variable("resource_configs",
                        stack.b64_decode(stack.resource_configs_hash))
 
