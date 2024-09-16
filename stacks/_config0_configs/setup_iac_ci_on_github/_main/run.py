@@ -18,7 +18,7 @@ def run(stackargs):
                              types="str")
 
     # add shelloutconfigs
-    stack.add_shelloutconfig('config0-publish:::config0-core::iac_ci_s3_to_repo')
+    stack.add_shelloutconfig('config0-publish:::config0_core::iac_ci_s3_to_repo')
 
     # initialize
     stack.init_variables()
