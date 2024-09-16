@@ -24,9 +24,9 @@ def run(stackargs):
     stack.init_variables()
     stack.init_shelloutconfigs()
 
-    github_token = stack.inputvars.get("github_token")
-    if not github_token:
-        raise Exception("we need a github token")
+    iac_ci_github_token = stack.inputvars.get("iac_ci_github_token")
+    if not iac_ci_github_token:
+        raise Exception("we need a iac_ci_github_token")
 
     stack.set_variable("iac_ci_folder",
                        f'{stack.project_name}/{stack.stateful_id}')
@@ -63,7 +63,7 @@ def run(stackargs):
     }
 
     env_vars.update({
-        "GITHUB_TOKEN":github_token,
+        "GITHUB_TOKEN":iac_ci_github_token,
         "GITHUB_NICKNAME": stack.nickname,
 
     })
