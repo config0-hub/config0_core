@@ -64,7 +64,7 @@ def run(stackargs):
 
     env_vars.update({
         "GITHUB_TOKEN":iac_ci_github_token,
-        "GITHUB_NICKNAME": stack.nickname,
+        "GITHUB_NICKNAME": stack.nickname
 
     })
 
