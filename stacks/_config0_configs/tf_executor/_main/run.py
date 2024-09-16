@@ -588,6 +588,7 @@ def run(stackargs):
 
     # determine whether we need to setup iac ci
     if not stack.inputvars.get("iac_ci_repo"):
+        raise Exception("testtest456 - iac ci repo not set")
         return stack.get_results()
 
     arguments = {
@@ -604,6 +605,9 @@ def run(stackargs):
                      "automation_phase": "continuous_delivery",
                      "human_description": human_description}
 
+        raise Exception("testtest456 - setup iac ci")
         stack.setup_iac_ci.insert(**inputargs)
+    else:
+        raise Exception("testtest456 - NOT - setup iac ci")
 
     return stack.get_results()
