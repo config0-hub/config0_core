@@ -527,6 +527,13 @@ def run(stackargs):
                              default="tofu:1.6.2",
                              types="str")
 
+    # one folder per environment/one main branch
+    # one branch per environment
+    stack.parse.add_optional(key="iac_ci_pr_strategy",
+                             default="folder",
+                             choices=["folder", "branch"],
+                             types="str")
+
     stack.parse.add_optional(key="create_remote_state",
                              default=True,
                              types="bool,str")
@@ -541,6 +548,7 @@ def run(stackargs):
 
     # publish_resource -> output_resource_to_ui
     stack.add_substack('config0-publish:::output_resource_to_ui')
+    stack.add_substack('config0-publish:::setup_iac_ci_on_github')
 
     # Initialize Variables in stack
     stack.init_variables()
@@ -577,5 +585,25 @@ def run(stackargs):
         output_inputargs = tfconfig.get_output_inputargs()
         stack.output_resource_to_ui.insert(display=True,
                                            **output_inputargs)
+
+    # determine whether we need to setup iac ci
+    if not stack.inputvars.get("iac_ci_repo"):
+        return stack.get_results()
+
+    arguments = {
+        "stateful_id": stack.stateful_id,
+        "resource_type": stack.resource_type
+    }
+
+    # only really tested for github, but
+    # will expand to bitbucket and gitlab
+    if stack.inputvars.get("iac_ci_repo_provider","github") == "github":
+        human_description = 'IAC CI Gitops setup stateful_id "{}"'.format(stack.stateful_id)
+
+        inputargs = {"arguments": arguments,
+                     "automation_phase": "continuous_delivery",
+                     "human_description": human_description}
+
+        stack.setup_iac_ci.insert(**inputargs)
 
     return stack.get_results()
