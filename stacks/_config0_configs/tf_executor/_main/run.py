@@ -603,6 +603,6 @@ def run(stackargs):
         inputargs = {"arguments": arguments,
                      "automation_phase": "continuous_delivery",
                      "human_description": human_description}
-        stack.setup_iac_ci.insert(**inputargs)
+        stack.setup_iac_ci_on_github.insert(**inputargs)
 
     return stack.get_results()
