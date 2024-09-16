@@ -7,7 +7,7 @@ def run(stackargs):
     stack.parse.add_required(key="stateful_id",
                              types="str")
 
-    stack.parse.add_required(key="reource_type",
+    stack.parse.add_required(key="resource_type",
                              types="str")
 
     stack.parse.add_optional(key="iac_ci_repo",
