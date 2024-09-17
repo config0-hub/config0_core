@@ -61,14 +61,12 @@ else
 fi
 
 # Verify that the branch has been created
-CURRENT_BRANCH=$(git branch --show-current) || CURRENT_BRANCH=`git name-rev HEAD | cut -d " " -f 2`
+#CURRENT_BRANCH=$(git branch --show-current) || CURRENT_BRANCH=`git name-rev HEAD | cut -d " " -f 2`
+CURRENT_BRANCH=`git name-rev HEAD | cut -d " " -f 2`
 
 if [ "$CURRENT_BRANCH" != "$IAC_CI_BRANCH" ]; then
     echo "WARNING: Failed to switch to branch '$IAC_CI_BRANCH'. Currently on '$CURRENT_BRANCH'."
 fi
-
-# Download the zip file from S3
-aws s3 cp $IAC_SRC_S3_LOC /tmp/$IAC_SRC_FILENAME
 
 if [ -d "$DEST_DIR" ]; then
     echo "Directory '$DEST_DIR' exists. Deleting it..."
@@ -77,8 +75,9 @@ fi
 
 mkdir -p $DEST_DIR
 
-# Unzip the file into the specified directory
-unzip "/tmp/$IAC_SRC_FILENAME" -d $DEST_DIR/
+# download the zip file from S3 and unzip
+aws s3 cp $IAC_SRC_S3_LOC /tmp/$IAC_SRC_FILENAME || exit 9
+unzip "/tmp/$IAC_SRC_FILENAME" -d $DEST_DIR/ || exit 9
 rm "/tmp/$IAC_SRC_FILENAME" || echo "could not delete zip file"
 
 # Move unzipped files to the current directory
