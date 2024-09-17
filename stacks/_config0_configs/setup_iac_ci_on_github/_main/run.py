@@ -59,7 +59,8 @@ def run(stackargs):
         "IAC_REPO_FOLDER":stack.iac_ci_folder,
         "IAC_CI_BRANCH":stack.iac_ci_branch,
         "IAC_CI_REPO": stack.iac_ci_repo,
-        "IAC_SRC_S3_LOC": iac_src_s3_loc
+        "IAC_SRC_S3_LOC": iac_src_s3_loc,
+        "STATEFUL_ID": stack.stateful_id   # this is useful but not needed
     }
 
     env_vars.update({

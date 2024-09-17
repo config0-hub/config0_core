@@ -33,11 +33,6 @@ if [ -z "$IAC_REPO_FOLDER" ]; then
     exit 1
 fi
 
-if [ -z "$STATEFUL_ID" ]; then
-    echo "Error: STATEFUL_ID is not set."
-    exit 1
-fi
-
 IAC_SRC_FILENAME="${IAC_SRC_S3_LOC##*/}"  # Gets the file name from the full S3 path
 
 # clone branch url
