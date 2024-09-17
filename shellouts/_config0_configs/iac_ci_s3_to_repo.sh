@@ -47,7 +47,7 @@ then
     echo "$IAC_CI_BRANCH branch exists."
     git clone "$REPO_URL"
     cd $PWD/$CLONE_DIR
-    git checkout "$IAC_CI_BRANCH" || echo "aleady on branch $IAC_CI_REPO"
+    git checkout "$IAC_CI_BRANCH" || echo "already on branch $IAC_CI_REPO"
 else
     echo "Creating branch $IAC_CI_BRANCH"
 
