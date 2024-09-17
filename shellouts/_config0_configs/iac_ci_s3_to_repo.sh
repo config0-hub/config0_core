@@ -61,10 +61,10 @@ else
 fi
 
 # Verify that the branch has been created
-CURRENT_BRANCH=$(git branch --show-current)
+CURRENT_BRANCH=$(git branch --show-current) || CURRENT_BRANCH=`git name-rev HEAD | cut -d " " -f 2`
+
 if [ "$CURRENT_BRANCH" != "$IAC_CI_BRANCH" ]; then
-    echo "Error: Failed to switch to branch '$IAC_CI_BRANCH'. Currently on '$CURRENT_BRANCH'."
-    exit 1
+    echo "WARNING: Failed to switch to branch '$IAC_CI_BRANCH'. Currently on '$CURRENT_BRANCH'."
 fi
 
 # Download the zip file from S3
