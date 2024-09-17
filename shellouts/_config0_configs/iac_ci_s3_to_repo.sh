@@ -47,7 +47,7 @@ then
     echo "$IAC_CI_BRANCH branch exists."
     git clone "$REPO_URL"
     cd $PWD/$CLONE_DIR
-    git checkout "$IAC_CI_BRANCH"
+    git checkout "$IAC_CI_BRANCH" || echo "aleady on branch $IAC_CI_REPO"
 else
     echo "Creating branch $IAC_CI_BRANCH"
 
@@ -64,6 +64,8 @@ fi
 #CURRENT_BRANCH=$(git branch --show-current) || CURRENT_BRANCH=`git name-rev HEAD | cut -d " " -f 2`
 CURRENT_BRANCH=`git name-rev HEAD | cut -d " " -f 2`
 
+echo "current branch $CURRENT_BRANCH"
+
 if [ "$CURRENT_BRANCH" != "$IAC_CI_BRANCH" ]; then
     echo "WARNING: Failed to switch to branch '$IAC_CI_BRANCH'. Currently on '$CURRENT_BRANCH'."
 fi
@@ -76,13 +78,18 @@ fi
 mkdir -p $DEST_DIR
 
 # download the zip file from S3 and unzip
+echo "Downloading s3 location: $IAC_SRC_S3_LOC..."
 aws s3 cp $IAC_SRC_S3_LOC /tmp/$IAC_SRC_FILENAME || exit 9
+
+echo "Unzipping file $IAC_IAC_SRC_FILENAME"
 unzip "/tmp/$IAC_SRC_FILENAME" -d $DEST_DIR/ || exit 9
 rm "/tmp/$IAC_SRC_FILENAME" || echo "could not delete zip file"
 
 # Move unzipped files to the current directory
+echo "Changing permissions on directory $DEST_DIR"
 chmod 755 -R $DEST_DIR
 
+echo "Commit code"
 # Stage and commit the changes
 git add .
 git commit -a -m "updated commit with files from $IAC_SRC_FILENAME"
