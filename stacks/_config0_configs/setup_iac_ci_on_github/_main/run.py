@@ -75,9 +75,9 @@ def run(stackargs):
 
     })
 
-    human_description = 'IAC CI tateful_id "{}", repo {} branch {}'.format(stack.stateful_id,
-                                                                           stack.iac_ci_repo,
-                                                                           stack.iac_ci_branch)
+    human_description = 'IAC CI stateful_id/"{}", repo/"{}" branch/"{}"'.format(stack.stateful_id,
+                                                                                stack.iac_ci_repo,
+                                                                                stack.iac_ci_branch)
 
     inputargs = {
         "human_description": human_description,
