@@ -527,11 +527,9 @@ def run(stackargs):
                              default="tofu:1.6.2",
                              types="str")
 
-    # one folder per environment/one main branch
-    # one branch per environment
     stack.parse.add_optional(key="iac_ci_pr_strategy",
-                             default="folder",
-                             choices=["folder", "branch"],
+                             default="branch",
+                             choices=["branch", "folder"],
                              types="str")
 
     stack.parse.add_optional(key="create_remote_state",
@@ -592,7 +590,8 @@ def run(stackargs):
 
     arguments = {
         "stateful_id": stack.stateful_id,
-        "resource_type": stack.resource_type
+        "resource_type": stack.resource_type,
+        "iac_ci_pr_strategy": stack.iac_ci_pr_strategy
     }
 
     # only really tested for github, but

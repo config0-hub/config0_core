@@ -13,8 +13,11 @@ def run(stackargs):
     stack.parse.add_optional(key="iac_ci_repo",
                              types="str")
 
+    # one folder per environment/one main branch
+    # one branch per environment
     stack.parse.add_optional(key="iac_ci_pr_strategy",
-                             default="folder",
+                             default="branch",
+                             choices=["branch", "folder"],
                              types="str")
 
     # add shelloutconfigs
