@@ -44,7 +44,10 @@ def run(stackargs):
     if stack.iac_ci_pr_strategy == "folder":
         stack.set_variable("iac_ci_branch",
                            stack.inputvars.get("iac_ci_branch", "main"))
-    elif "iac_ci_pr_strategy" == "branch":
+    elif stack.iac_ci_pr_strategy == "branch":
+        stack.set_variable("iac_ci_branch",
+                           stack.iac_ci_folder)
+    else:
         stack.set_variable("iac_ci_branch",
                            stack.iac_ci_folder)
 
