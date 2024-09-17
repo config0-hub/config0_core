@@ -90,4 +90,24 @@ def run(stackargs):
 
     stack.iac_ci_s3_to_repo.run(**inputargs)
 
+    # update resource
+    update_values = {
+        "iac_ci_info": {
+            "env_vars": {
+                "IAC_REPO_FOLDER":stack.iac_ci_folder,
+                "IAC_CI_BRANCH":stack.iac_ci_branch,
+                "IAC_CI_REPO": stack.iac_ci_repo,
+                "IAC_SRC_S3_LOC": iac_src_s3_loc,
+                "STATEFUL_ID": stack.stateful_id,
+                "SSM_NAME": resource_info.get("ssm_name"),
+                }
+        }
+    }
+
+    # register the iac-ci to ci system if exists
+    # testtest456
+    stack.update_resource_info(update_values=update_values,
+                               **resource_info)
+
+
     return stack.get_results()
