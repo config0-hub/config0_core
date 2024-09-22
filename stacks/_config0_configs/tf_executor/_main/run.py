@@ -240,7 +240,7 @@ class TFRunExec(object):
 
         self.env_vars["SSM_NAME"] = self.stack.ssm_name
 
-class Config0Resource(object):
+class Config0Resource:
 
     '''
     This variables and settings to insert the resource, which
@@ -441,7 +441,17 @@ class TFConfigHelper(object):
             except:
                 self.logger.debug("could not add map keys for do")
 
+    def _add_cloudprovider(self):
+
+        if
+
     def _get_config0_resource_exec_settings(self):
+
+        # add cloud provider specific regions
+        if self.config0_resource.values.get("aws_default_region"):
+            self.config0_resource.values["region"] = self.config0_resource.values["aws_default_region"]
+        elif self.config0_resource.values.get("do_region"):
+            self.config0_resource.values["region"] = self.config0_resource.values["do_region"]
 
         _settings = {
             "tf_runtime_settings_hash": self.stack.b64_encode({

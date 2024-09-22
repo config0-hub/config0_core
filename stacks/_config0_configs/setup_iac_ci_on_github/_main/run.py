@@ -59,6 +59,8 @@ def run(stackargs):
         must_be_one=True)[0]
 
     remote_stateful_bucket = resource_info["remote_stateful_bucket"]
+
+    # ref 542352
     iac_src_s3_loc = f's3://{remote_stateful_bucket}/{stack.stateful_id}/state/src.{stack.stateful_id}.zip'
 
     env_vars = {
