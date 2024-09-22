@@ -443,15 +443,15 @@ class TFConfigHelper(object):
 
     def _add_cloudprovider(self):
 
-        if
+        # add cloud provider specific regions
+        if self.config0_resource.values.get("aws_default_region"):
+            self.config0_resource.values["region"]=self.config0_resource.values["aws_default_region"]
+        elif self.config0_resource.values.get("do_region"):
+            self.config0_resource.values["region"]=self.config0_resource.values["do_region"]
 
     def _get_config0_resource_exec_settings(self):
 
-        # add cloud provider specific regions
-        if self.config0_resource.values.get("aws_default_region"):
-            self.config0_resource.values["region"] = self.config0_resource.values["aws_default_region"]
-        elif self.config0_resource.values.get("do_region"):
-            self.config0_resource.values["region"] = self.config0_resource.values["do_region"]
+        self._add_cloudprovider()
 
         _settings = {
             "tf_runtime_settings_hash": self.stack.b64_encode({
