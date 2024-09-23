@@ -71,8 +71,9 @@ def run(stackargs):
         "STATEFUL_ID": stack.stateful_id   # this is useful but not needed
     }
 
+
     env_vars.update({
-        "GITHUB_TOKEN":iac_ci_github_token,
+        "IAC_CI_GITHUB_TOKEN":iac_ci_github_token,
         "GITHUB_NICKNAME": stack.nickname
 
     })

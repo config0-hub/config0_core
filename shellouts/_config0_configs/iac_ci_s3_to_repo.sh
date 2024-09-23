@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # set VCS environment variables
-if [ -z "$GITHUB_TOKEN" ]; then
-    echo "Error: GITHUB_TOKEN is not set."
+if [ -z "$IAC_CI_GITHUB_TOKEN" ]; then
+    echo "Error: IAC_CI_GITHUB_TOKEN is not set."
     exit 1
 fi
 
@@ -36,7 +36,7 @@ fi
 IAC_SRC_FILENAME="${IAC_SRC_S3_LOC##*/}"  # Gets the file name from the full S3 path
 
 # clone branch url
-REPO_URL="https://$GITHUB_TOKEN@github.com/$GITHUB_NICKNAME/$IAC_CI_REPO"
+REPO_URL="https://$IAC_CI_GITHUB_TOKEN@github.com/$GITHUB_NICKNAME/$IAC_CI_REPO"
 PWD=`pwd`
 CLONE_DIR="$(basename "$REPO_URL" .git)"
 DEST_DIR=$PWD/$CLONE_DIR/$IAC_REPO_FOLDER
