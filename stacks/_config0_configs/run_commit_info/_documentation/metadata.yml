@@ -1,0 +1,13 @@
+desc: inserts commit_info into run 
+release: 0.0.1
+categories: 
+   - config0-core
+   - config0_run
+tags:
+   - config0_run
+   - config0-core
+   - config0
+   - run
+   - metadata
+   - commit_info
+   - commit

@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+
+import os
+from subprocess import Popen
+from subprocess import PIPE
+from subprocess import STDOUT
+
+def run_cmd(cmd):
+
+    print('executing cmd "{}"'.format(cmd))
+
+    process = Popen(cmd,shell=True,bufsize=0,stdout=PIPE,stderr=STDOUT)
+
+    line = process.stdout.readline()
+
+    while line:
+        line = line.strip()
+        print(line)
+        line = process.stdout.readline()
+
+    out,error = process.communicate()
+    exitcode = process.returncode
+
+    if exitcode != 0: print('FAILED: executing cmd "{}" failed'.format(cmd))
+
+    return exitcode
+
+scripts_dir = "/opt/config0/scripts"
+_scripts = os.environ.get("POST_SCRIPTS")
+
+if not _scripts:
+    print("No Post scripts to execute")
+    exit(0)
+
+os.chdir(scripts_dir)
+
+for script in _scripts.split(","):
+    exitcode = run_cmd(os.path.join(scripts_dir,script))
+    if exitcode != 0: exit(exitcode)
