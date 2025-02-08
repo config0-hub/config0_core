@@ -1,0 +1,16 @@
+desc: tf constructor is helper for terraform automation
+release: 0.0.1
+categories: 
+   - config0-core
+   - authoring
+   - terraform
+tags:
+   - config0-core
+   - config0
+   - terraform
+   - helper
+   - iac
+   - aws
+   - gcp
+   - digitalocean
+   - do

@@ -1,0 +1,10 @@
+desc: Wrapper for inserting metadata into run
+release: 0.0.1
+categories: 
+   - config0_saas
+tags:
+   - config0
+   - config0-core
+   - config0
+   - metadata
+   - run
