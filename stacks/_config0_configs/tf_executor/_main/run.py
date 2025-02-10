@@ -390,9 +390,11 @@ class TFConfigHelper(object):
         tf_configs = {
             "tf_runtime": self.stack.tf_runtime,
             "tf_vars":self.tf_vars,
-            "terraform_type":self.type,
             "resource_configs":{}
         }
+
+        if self.type:
+            tf_configs["terraform_type"] = self.type
 
         keys_to_include = [
             "output_keys",
@@ -498,7 +500,8 @@ def run(stackargs):
     stack.parse.add_required(key="resource_configs_hash",
                              types="str")
 
-    stack.parse.add_required(key="terraform_type",
+    stack.parse.add_optional(key="terraform_type",
+                             default="null",
                              types="str")
 
     stack.parse.add_optional(key="tf_vars_hash",
