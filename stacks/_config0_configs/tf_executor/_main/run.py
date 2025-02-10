@@ -5,9 +5,9 @@ from config0_publisher.utilities import print_json
 
 class CmEnvVars(object):
 
-    '''
+    """
     some common methods to be inherited
-    '''
+    """
 
     def __init__(self,stack):
 
@@ -39,10 +39,9 @@ class CmEnvVars(object):
 
         self.standard_codebuild_keys = [
             "BUILD_TIMEOUT",
-            "BUILD_IMAGE",
-            "COMPUTE_TYPE",
-            "IMAGE_TYPE",
-            "CODEBUILD_BASENAME",
+            "CODEBUILD_IMAGE",
+            "CODEBUILD_COMPUTE_TYPE",
+            "CODEBUILD_IMAGE_TYPE"
             ]
 
         self.standard_lambda_keys = [
@@ -51,28 +50,28 @@ class CmEnvVars(object):
 
         self.env_vars = {}
 
-    def _default(self):
+    @staticmethod
+    def _default():
 
         return {
             "TIMEOUT": "600"
         }
 
-    def _default_codebuild(self):
+    @staticmethod
+    def _default_codebuild():
 
         return {
-            "AWS_REGION": "us-east-1",
-            "BUILD_IMAGE": "aws/codebuild/standard:4.0",
-            "COMPUTE_TYPE": "BUILD_GENERAL1_SMALL",
-            "IMAGE_TYPE": "LINUX_CONTAINER",
-            "CODEBUILD_BASENAME":"config0-iac",
-            "BUILDSPEC_FILE": "buildspec.yml"
+            "AWS_DEFAULT_REGION": "us-east-1",
+            "CODEBUILD_IMAGE": "aws/codebuild/standard:4.0",
+            "CODEBUILD_COMPUTE_TYPE": "BUILD_GENERAL1_SMALL",
+            "CODEBUILD_IMAGE_TYPE": "LINUX_CONTAINER"
         }
 
-    def _default_lambda(self):
+    @staticmethod
+    def _default_lambda():
 
         return {
-            "AWS_REGION": "us-east-1",
-            "LAMBDA_FUNCTION_NAME": "config0-iac"
+            "AWS_DEFAULT_REGION": "us-east-1"
         }
 
     def add(self,keys,default_values=None,clobber=False):
@@ -113,7 +112,7 @@ class CmEnvVars(object):
 
         try:
             env_vars = self.stack.resource_configs["env_vars"]
-        except:
+        except Exception:
             env_vars = {}
 
         self.update(env_vars)
@@ -148,10 +147,10 @@ class CmEnvVars(object):
             if include_num:
                 try:
                     number_value = int(_value)
-                except:
+                except Exception:
                     number_value = None
                 if number_value:
-                    env_vars[_key] = "{}".format(_value)
+                    env_vars[_key] = f"{_value}"
                     continue
             if _value is True:
                 env_vars[_key] = "True"
@@ -183,10 +182,10 @@ class CmEnvVars(object):
 
 class TFRunExec(object):
 
-    '''
+    """
     The runtimes include AWS Codebuild, Lambda function, or docker container
     to execute the Terraform/OpenTofu code
-    '''
+    """
 
     def __init__(self,stack):
 
@@ -219,13 +218,8 @@ class TFRunExec(object):
 
         if self.stack.get_attr("tf_runtime"):
             _binary, _version = self.stack.tf_runtime.split(":")
-            if _binary in ["tofu","opentofu"]:
-                _tf_binary = "tofu"
-                _tf_version = _version
-            else:
-                _tf_binary = "terraform"
-                _tf_version = _version
-
+            _tf_binary = "tofu" if _binary in ["tofu", "opentofu"] else "terraform"
+            _tf_version = _version
         if not _tf_binary:
             _tf_binary = "terraform"
             _tf_version = "1.5.4"
@@ -242,12 +236,12 @@ class TFRunExec(object):
 
 class Config0Resource:
 
-    '''
+    """
     This variables and settings to insert the resource, which
     is typically a cloud infrastructure in the Config0 resource db.
     They include things like query keys, lables, etc that we use
     to interact with Config0 resource db
-    '''
+    """
 
     def __init__(self,stack):
 
@@ -257,6 +251,7 @@ class Config0Resource:
         self.provider = stack.provider
         self.type = stack.resource_type
         self.name = stack.resource_name
+        self.resource_id = stack.resource_id
 
         self._parse_resource_configs()
         self._set_env_vars()
@@ -309,10 +304,14 @@ class Config0Resource:
         self.values["provider"] = self.provider
         self.values["tf_runtime"] = self.stack.tf_runtime
 
+        if self.stack.resource_id:
+            self.values["resource_id"] = self.stack.resource_id
+
     def get_inputargs(self):
 
-        human_description = 'creating resource type: "{}" name: "{}"'.format(self.type,
-                                                                             self.name)
+        human_description = (
+            f'creating resource type: "{self.type}" name: "{self.name}"'
+        )
 
         inputargs = {
             "display": True,
@@ -347,38 +346,36 @@ class Config0Resource:
             "publish_keys_hash":self.stack.b64_encode(self.output_keys)
         }
 
+        if self.stack.resource_id:
+            overide_values["resource_id"] = self.stack.resource_id
+
         if self.output_prefix_key:
             overide_values["prefix_key"] = self.output_prefix_key
 
         return {
             "overide_values": overide_values,
             "automation_phase": "infrastructure",
-            "human_description": 'Output resource name "{}" type "{}"'.format(self.name,
-                                                                              self.type)
+            "human_description": f'Output resource name "{self.name}" type "{self.type}"',
         }
 
 class TFConfigHelper(object):
 
-    '''
+    """
     The Terraform Execution Helper that helps organize and manage
     things like TF vars that are used to create terraform.tfvars file
-    '''
+    """
     def __init__(self,stack):
 
         self.classname = 'TFConfigHelper'
         self.logger = Config0Logger(self.classname)
-        self.logger.debug("Instantiating %s" % self.classname)
+        self.logger.debug(f"Instantiating {self.classname}")
 
         self.stack = stack
         self.type = self.stack.terraform_type
         self.resource_configs = self.stack.resource_configs
         self.stack.verify_variables()
 
-        if self.stack.get_attr("tf_vars"):
-            self.tf_vars = self.stack.tf_vars
-        else:
-            self.tf_vars = {}
-
+        self.tf_vars = self.stack.tf_vars if self.stack.get_attr("tf_vars") else {}
         self.config0_resource = Config0Resource(self.stack)
 
     def _get_tf_configs(self):
@@ -430,7 +427,7 @@ class TFConfigHelper(object):
                 tf_configs["resource_configs"]["maps"] = {
                     "region": "aws_default_region"
                 }
-            except:
+            except Exception:
                 self.logger.debug("could not add map keys for aws")
 
         if self.stack.get_attr("provider") == "do":
@@ -438,7 +435,7 @@ class TFConfigHelper(object):
                 tf_configs["resource_configs"]["maps"] = {
                     "region": "do_region"
                 }
-            except:
+            except Exception:
                 self.logger.debug("could not add map keys for do")
 
     def _add_cloudprovider(self):
@@ -505,6 +502,10 @@ def run(stackargs):
                              types="str")
 
     stack.parse.add_optional(key="tf_vars_hash",
+                             default="null",
+                             types="str")
+
+    stack.parse.add_optional(key="resource_id",
                              default="null",
                              types="str")
 
@@ -607,11 +608,12 @@ def run(stackargs):
     # only really tested for github, but
     # will expand to bitbucket and gitlab
     if stack.inputvars.get("iac_ci_repo_provider","github") == "github":
-        human_description = 'IAC CI Gitops setup stateful_id "{}"'.format(stack.stateful_id)
+        human_description = f'IAC CI Gitops setup stateful_id "{stack.stateful_id}"'
 
         inputargs = {"arguments": arguments,
                      "automation_phase": "continuous_delivery",
                      "human_description": human_description}
+
         stack.setup_iac_ci_on_github.insert(**inputargs)
 
     return stack.get_results()
