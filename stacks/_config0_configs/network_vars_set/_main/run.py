@@ -50,11 +50,9 @@ def run(stackargs):
         stack.insert_vars_set(values=resource,
                               labels=stack._labels)
 
-        description = 'added a variable set name {}'.format(
-            stack.vars_set_name)
+        description = f'added a variable set name {stack.vars_set_name}'
     else:
-        description = 'failed to add variable set name {}'.format(
-            stack.vars_set_name)
+        description = f'failed to add variable set name {stack.vars_set_name}'
 
     stack.add_external_cmd(cmd="sleep 1",
                            order_type="empty_stack::shellout",
