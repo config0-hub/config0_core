@@ -104,8 +104,8 @@ def run(stackargs):
         }
     }
 
-    # register the iac-ci to ci system if exists
     # testtest456
+    # register the iac-ci to ci system if exists
     stack.update_resource(update_values=update_values,
                           **resource_info)
 
