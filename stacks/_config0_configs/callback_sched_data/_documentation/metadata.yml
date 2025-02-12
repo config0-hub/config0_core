@@ -1,0 +1,13 @@
+desc: Callback to the SaaS when the schedule completes
+release: 1.0.1
+categories: 
+   - config0-core
+   - config0_saas
+tags:
+   - callback
+   - saas
+   - schedule
+   - publish
+   - inputvars
+   - config0_saas
+   - config0

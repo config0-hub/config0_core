@@ -1,0 +1,11 @@
+desc: Publish the info of the worker
+release: 0.0.1
+categories: 
+   - config0-core
+   - config0_run
+tags:
+   - config0_run
+   - config0-core
+   - config0
+   - debug
+   - run
