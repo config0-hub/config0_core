@@ -1,0 +1,12 @@
+desc: Wrapper for inserting metadata into run
+release: 0.0.1
+author: Gary Leong <gary@config0.com>
+license: GNU General Public License v3.0
+categories: 
+   - config0_saas
+tags:
+   - config0
+   - config0-core
+   - config0
+   - metadata
+   - run
