@@ -21,7 +21,62 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set -e  # Exit immediately if a command exits with a non-zero status
+# Exit immediately if a command exits with a non-zero status
+set -e
+
+###########################################
+# ENVIRONMENT VARIABLES AND CONFIGURATION #
+###########################################
+
+# Required environment variables with defaults where appropriate
+# Version control system variables
+IAC_CI_GITHUB_TOKEN=${IAC_CI_GITHUB_TOKEN:-""}  # No default, required
+GITHUB_NICKNAME=${GITHUB_NICKNAME:-""}          # No default, required
+
+# IAC CI variables
+IAC_CI_REPO=${IAC_CI_REPO:-""}                  # No default, required
+IAC_CI_BRANCH=${IAC_CI_BRANCH:-""}              # No default, required
+
+# AWS S3 variables
+IAC_SRC_S3_LOC=${IAC_SRC_S3_LOC:-""}            # No default, required
+IAC_REPO_FOLDER=${IAC_REPO_FOLDER:-""}          # No default, required
+
+# Script configuration
+CLONE_DEPTH=${CLONE_DEPTH:-2}                   # Default clone depth: 2
+TMPDIR=${TMPDIR:-/tmp}                          # Default temporary directory: /tmp
+GIT_PUSH_TIMEOUT=${GIT_PUSH_TIMEOUT:-120}       # Default timeout for git push: 120 seconds
+GIT_RETRY_MIN=${GIT_RETRY_MIN:-1}               # Minimum retry delay: 1 second
+GIT_RETRY_MAX=${GIT_RETRY_MAX:-5}               # Maximum retry delay: 5 seconds
+
+# Global variables initialized during script execution
+ORIGINAL_DIR=$(pwd)
+CLONE_DIR=""
+IAC_SRC_FILENAME=""
+REPO_URL=""
+DEST_DIR=""
+
+###########################################
+# UTILITY FUNCTIONS                       #
+###########################################
+
+# Function to clean up resources - defined early so it's available for traps
+cleanup() {
+    echo "Cleaning up resources..."
+    
+    # Return to the original directory
+    cd "$ORIGINAL_DIR" || true
+    
+    # Remove the temporary directory if it exists
+    if [ -n "$CLONE_DIR" ] && [ -d "$CLONE_DIR" ]; then
+        echo "Removing temporary directory: $CLONE_DIR"
+        rm -rf "$CLONE_DIR" || echo "Warning: Failed to remove temporary directory $CLONE_DIR"
+    fi
+    
+    echo "Cleanup completed"
+}
+
+# Setup trap to ensure cleanup on script exit
+trap cleanup EXIT INT TERM
 
 # Function to check required environment variables
 check_required_env() {
@@ -33,6 +88,17 @@ check_required_env() {
         exit 1
     fi
 }
+
+# Function to get a random number between min and max
+random_between() {
+    local min=$1
+    local max=$2
+    echo $((min + RANDOM % (max - min + 1)))
+}
+
+###########################################
+# MAIN PROCESS FUNCTIONS                  #
+###########################################
 
 # Function to validate environment variables
 validate_environment() {
@@ -49,6 +115,23 @@ validate_environment() {
     # Check for required AWS S3 environment variables
     check_required_env "IAC_SRC_S3_LOC"
     check_required_env "IAC_REPO_FOLDER"
+    
+    # Log configuration
+    echo "Using clone depth: $CLONE_DEPTH"
+    echo "Using temporary directory: $TMPDIR"
+    echo "Git push timeout: $GIT_PUSH_TIMEOUT seconds"
+    echo "Git retry delay range: $GIT_RETRY_MIN-$GIT_RETRY_MAX seconds"
+}
+
+# Function to create a random directory
+create_random_dir() {
+    # Create a unique random directory name
+    local random_suffix=$(date +%s)_$(random_between 1000 9999)
+    CLONE_DIR="${TMPDIR}/iac_sync_${random_suffix}"
+    
+    # Create the directory
+    mkdir -p "$CLONE_DIR" || { echo "Failed to create temporary directory"; exit 2; }
+    echo "Created temporary directory: $CLONE_DIR"
 }
 
 # Function to initialize repository paths
@@ -60,9 +143,7 @@ initialize_paths() {
 
     # Set up repository paths
     REPO_URL="https://$IAC_CI_GITHUB_TOKEN@github.com/$GITHUB_NICKNAME/$IAC_CI_REPO"
-    PWD=$(pwd)
-    CLONE_DIR="$(basename "$REPO_URL" .git)"
-    DEST_DIR="$PWD/$CLONE_DIR/$IAC_REPO_FOLDER"
+    DEST_DIR="$CLONE_DIR/$IAC_REPO_FOLDER"
     
     echo "Repository: $IAC_CI_REPO"
     echo "Branch: $IAC_CI_BRANCH"
@@ -73,20 +154,20 @@ initialize_paths() {
 prepare_git_repo() {
     echo "Preparing git repository..."
     
+    # Navigate to the random directory
+    cd "$CLONE_DIR" || { echo "Failed to change to clone directory"; exit 3; }
+    
     # Check if branch exists and handle accordingly
     if git ls-remote --heads "$REPO_URL" "$IAC_CI_BRANCH" | grep -q "$IAC_CI_BRANCH"; then
-        echo "Branch '$IAC_CI_BRANCH' exists. Cloning repository..."
-        git clone "$REPO_URL" || { echo "Failed to clone repository"; exit 2; }
-        cd "$PWD/$CLONE_DIR" || { echo "Failed to change to cloned directory"; exit 3; }
-        git checkout "$IAC_CI_BRANCH" || { echo "Failed to checkout branch $IAC_CI_BRANCH"; exit 4; }
+        echo "Branch '$IAC_CI_BRANCH' exists. Cloning repository with depth $CLONE_DEPTH..."
+        git clone --depth="$CLONE_DEPTH" --branch "$IAC_CI_BRANCH" "$REPO_URL" . || { echo "Failed to clone repository"; exit 4; }
     else
         echo "Creating new branch '$IAC_CI_BRANCH'..."
-        # Clone the repository without checking out files
-        git clone --no-checkout "$REPO_URL" || { echo "Failed to clone repository"; exit 2; }
-        cd "$PWD/$CLONE_DIR" || { echo "Failed to change to cloned directory"; exit 3; }
+        # Clone the repository without checking out files, with minimal depth
+        git clone --depth="$CLONE_DEPTH" --no-checkout "$REPO_URL" . || { echo "Failed to clone repository"; exit 4; }
         # Create the new branch without files
-        git checkout --orphan "$IAC_CI_BRANCH" || { echo "Failed to create orphan branch"; exit 5; }
-        git rm -rf . || { echo "Failed to remove files from new branch"; exit 6; }
+        git checkout --orphan "$IAC_CI_BRANCH" || { echo "Failed to create orphan branch"; exit 6; }
+        git rm -rf . || { echo "Failed to remove files from new branch"; exit 7; }
     fi
 
     # Verify that the branch has been created
@@ -104,40 +185,38 @@ prepare_destination() {
     
     if [ -d "$DEST_DIR" ]; then
         echo "Directory '$DEST_DIR' exists. Deleting it..."
-        rm -rf "$DEST_DIR" || { echo "Failed to delete existing directory"; exit 7; }
+        rm -rf "$DEST_DIR" || { echo "Failed to delete existing directory"; exit 8; }
     fi
-    mkdir -p "$DEST_DIR" || { echo "Failed to create destination directory"; exit 8; }
+    mkdir -p "$DEST_DIR" || { echo "Failed to create destination directory"; exit 9; }
 }
 
 # Function to download and extract files from S3
 download_and_extract() {
     echo "Downloading and extracting files..."
     
+    local tmp_zip_file="${TMPDIR}/$IAC_SRC_FILENAME"
+    
     echo "Downloading from S3 location: $IAC_SRC_S3_LOC..."
-    aws s3 cp "$IAC_SRC_S3_LOC" "/tmp/$IAC_SRC_FILENAME" || { echo "Failed to download file from S3"; exit 9; }
+    aws s3 cp "$IAC_SRC_S3_LOC" "$tmp_zip_file" || { echo "Failed to download file from S3"; exit 10; }
 
     echo "Unzipping file $IAC_SRC_FILENAME..."
-    unzip "/tmp/$IAC_SRC_FILENAME" -d "$DEST_DIR/" || { echo "Failed to unzip file"; exit 10; }
-    rm "/tmp/$IAC_SRC_FILENAME" || echo "Warning: Could not delete temporary zip file"
+    unzip "$tmp_zip_file" -d "$DEST_DIR/" || { echo "Failed to unzip file"; exit 11; }
+    rm "$tmp_zip_file" || echo "Warning: Could not delete temporary zip file"
 
     # Set appropriate permissions
     echo "Setting permissions on directory $DEST_DIR..."
-    chmod 755 -R "$DEST_DIR" || { echo "Failed to set permissions"; exit 11; }
-}
-
-# Function to get a random number between min and max
-random_between() {
-    local min=$1
-    local max=$2
-    echo $((min + RANDOM % (max - min + 1)))
+    chmod 755 -R "$DEST_DIR" || { echo "Failed to set permissions"; exit 12; }
 }
 
 # Function to commit and push changes with retry mechanism
 commit_and_push() {
     echo "Committing and pushing changes..."
     
+    # Make sure we're in the git repo directory
+    cd "$CLONE_DIR" || { echo "Failed to change to clone directory"; exit 13; }
+    
     # Stage files
-    git add . || { echo "Failed to stage files"; exit 12; }
+    git add . || { echo "Failed to stage files"; exit 14; }
     
     # Commit files
     git commit -a -m "Updated commit with files from $IAC_SRC_FILENAME" || { 
@@ -147,17 +226,16 @@ commit_and_push() {
             return 0
         else
             echo "Failed to commit files"; 
-            exit 13; 
+            exit 15; 
         fi
     }
     
     # Push with retry mechanism
     local start_time=$(date +%s)
-    local timeout=120  # 2 minutes timeout
     local push_successful=false
     local retry_count=0
     
-    while [ $(($(date +%s) - start_time)) -lt $timeout ]; do
+    while [ $(($(date +%s) - start_time)) -lt $GIT_PUSH_TIMEOUT ]; do
         retry_count=$((retry_count + 1))
         echo "Attempt #$retry_count: Pushing changes to branch '$IAC_CI_BRANCH'..."
         
@@ -168,8 +246,8 @@ commit_and_push() {
         else
             echo "Push failed. Remote changes detected. Pulling latest changes and retrying..."
             git pull --rebase origin "$IAC_CI_BRANCH" || {
-                # Generate random delay between 1-5 seconds
-                local random_delay=$(random_between 1 5)
+                # Generate random delay between min and max
+                local random_delay=$(random_between $GIT_RETRY_MIN $GIT_RETRY_MAX)
                 echo "Failed to pull/rebase changes. Trying again in $random_delay seconds..."
                 sleep $random_delay
                 continue
@@ -178,33 +256,31 @@ commit_and_push() {
     done
     
     if [ "$push_successful" = false ]; then
-        echo "Error: Failed to push changes after $timeout seconds timeout ($retry_count attempts)."
+        echo "Error: Failed to push changes after $GIT_PUSH_TIMEOUT seconds timeout ($retry_count attempts)."
         echo "The operation may be conflicting with other concurrent changes."
-        exit 14
+        # The cleanup function will be called by the EXIT trap
+        exit 16
     fi
 
     echo "Successfully synced files from S3 to GitHub branch '$IAC_CI_BRANCH' after $retry_count attempt(s)"
 }
 
-# Function to clean up resources
-cleanup() {
-    echo "Cleaning up resources..."
-    
-    cd - || true
-    rm -rf "$CLONE_DIR" || echo "Warning: Failed to remove temporary clone directory"
-}
+###########################################
+# MAIN EXECUTION                          #
+###########################################
 
 # Main function to orchestrate the process
 main() {
     echo "==== Starting IAC sync process ===="
     
     validate_environment
+    create_random_dir
     initialize_paths
     prepare_git_repo
     prepare_destination
     download_and_extract
     commit_and_push
-    cleanup
+    # Whether successful or not, cleanup is called automatically by the trap
     
     echo "==== IAC sync process completed ===="
 }
