@@ -115,7 +115,7 @@ validate_environment() {
     # Check for required AWS S3 environment variables
     check_required_env "IAC_SRC_S3_LOC"
     check_required_env "IAC_REPO_FOLDER"
-    
+
     # Log configuration
     echo "Using clone depth: $CLONE_DEPTH"
     echo "Using temporary directory: $TMPDIR"

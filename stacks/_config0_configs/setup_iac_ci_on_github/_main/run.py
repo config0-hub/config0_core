@@ -49,7 +49,7 @@ def run(stackargs):
         raise Exception("we need a iac_ci_github_token")
 
     stack.set_variable("iac_ci_folder",
-                       f'{stack.project_name}/{stack.stateful_id}')
+                       f'{stack.project_name}/{stack.resource_type}/{stack.stateful_id}')
 
     if not stack.get_attr("iac_ci_repo"):
         stack.set_variable("iac_ci_repo",
