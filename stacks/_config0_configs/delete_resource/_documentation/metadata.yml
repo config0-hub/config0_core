@@ -1,4 +1,4 @@
-desc: Stack for destroying a single resource by matching criteria
+desc: Safely destroys a single Config0 resource by matching specific criteria
 release: 0.0.1
 author: Gary Leong <gary@config0.com>
 license: GNU General Public License v3.0

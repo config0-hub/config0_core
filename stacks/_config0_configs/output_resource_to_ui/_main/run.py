@@ -57,7 +57,7 @@ def run(stackargs):
     stack.init_variables()
 
     if stack.get_attr("match_hash"):
-        match = stack.b64_decode(stack.hash)
+        match = stack.b64_decode(stack.match_hash)
     else:
         match = {"resource_type": stack.resource_type}
 
@@ -88,13 +88,10 @@ def run(stackargs):
     resource = data
 
     if stack.get_attr("publish_keys_hash"):
-
         keys2pass = stack.b64_decode(stack.publish_keys_hash)
-
         resource = {}
 
         for _key in keys2pass:
-
             if not data.get(_key):
                 continue
 
@@ -119,7 +116,6 @@ def run(stackargs):
 
     if stack.get_attr("map_keys_hash"):
         for _key, _map_key in stack.b64_decode(stack.map_keys_hash).items():
-
             if _key not in resource:
                 continue
 
@@ -129,7 +125,6 @@ def run(stackargs):
 
     # add prefix if necessary
     if stack.get_attr("prefix_key"):
-
         _changes = []
 
         for _key, _value in resource.items():

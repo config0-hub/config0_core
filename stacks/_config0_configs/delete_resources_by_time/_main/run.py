@@ -16,7 +16,7 @@
 """
 
 def sorted_keystr(items, key, reverse=None):
-
+    """Sort items by string representation of a specific key."""
     from operator import itemgetter
 
     key_str = f"_tmp_sort_{str(key)}-str"
@@ -35,7 +35,7 @@ def sorted_keystr(items, key, reverse=None):
 
 
 def _get_delete_resources(stack, keep_resource_ids=None):
-
+    """Get resources to delete, excluding those in keep_resource_ids."""
     parallel_overides = []
     parallel_resources = []
     sequentialize_resources = []
@@ -44,7 +44,6 @@ def _get_delete_resources(stack, keep_resource_ids=None):
     ref_schedule_ids = stack.to_list(stack.ref_schedule_ids)
 
     for ref_schedule_id in ref_schedule_ids:
-
         _resources = stack.get_resource(ref_schedule_id=ref_schedule_id)
 
         if not _resources:
@@ -78,18 +77,20 @@ def _get_delete_resources(stack, keep_resource_ids=None):
     if sequentialize_resources:
         parallel_overides.extend(sequentialize_resources)
 
-    results = {"parallel_resources": parallel_resources,
-               "parallel_overides": parallel_overides,
-               "sequentialize_resources": sorted_keystr(sequentialize_resources,
-                                                        key="checkin",
-                                                        reverse=True),
-               "added_ids": added_ids}
+    results = {
+        "parallel_resources": parallel_resources,
+        "parallel_overides": parallel_overides,
+        "sequentialize_resources": sorted_keystr(sequentialize_resources,
+                                                key="checkin",
+                                                reverse=True),
+        "added_ids": added_ids
+    }
 
     return results
 
 
 def _get_keep_resources(stack):
-
+    """Gather IDs for resources to keep."""
     # Gather the id for the keep resources
     if not stack.get_attr("keep_resources"):
         return
@@ -117,9 +118,7 @@ def _get_keep_resources(stack):
 
 
 def run(stackargs):
-
-    #from time import sleep
-
+    """Main function to process stack arguments and manage resources."""
     stack = newStack(stackargs)
 
     # required stack args
@@ -143,7 +142,6 @@ def run(stackargs):
 
     # parallel overide set True
     if stack.get_attr("parallel_overide") and all_resources.get("parallel_overides"):
-
         stack.logger.debug("Parallel overide set True")
         stack.logger.debug("Executing destroy resources in parallel")
 

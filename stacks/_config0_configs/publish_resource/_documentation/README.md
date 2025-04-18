@@ -10,7 +10,7 @@ This stack retrieves a specified resource from the Config0 database and publishe
 
 | Name | Description | Default |
 |------|-------------|---------|
-| resource_type | Resource type used to categorized main IaC code/automation |  |
+| resource_type | Resource type used to categorized main IaC code/automation | &nbsp; |
 
 ### Optional
 
@@ -23,20 +23,19 @@ This stack retrieves a specified resource from the Config0 database and publishe
 | map_keys_hash | Configuration for map keys hash | null |
 | prefix_key | Configuration for prefix key | null |
 
-## Features
+## Dependencies
 
-- Retrieves resources from the Config0 database based on resource type and optional filters
-- Supports filtering by name and schedule ID
-- Allows filtering by custom labels encoded in base64
-- Supports publishing selected keys from the resource
-- Provides key mapping capability to rename keys for display
-- Allows prefixing of all keys for better organization in the UI
-- Uses deep copy to prevent unintended modifications of the original resource data
+### Execgroups
+- [config0-publish:::github::lambda_trigger_stepf](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/exec/groups/config0-publish/github/lambda_trigger_stepf/default)
+
+### Shelloutconfigs
+- [config0-publish:::terraform::resource_wrapper](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/shelloutconfigs/config0-publish/terraform/resource_wrapper/default)
 
 ## License
-
+<pre>
 Copyright (C) 2025 Gary Leong <gary@config0.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, version 3 of the License.
+</pre>

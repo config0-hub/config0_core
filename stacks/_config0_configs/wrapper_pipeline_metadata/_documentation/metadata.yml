@@ -1,4 +1,4 @@
-desc: Wrapper for inserting metadata into run
+desc: Add and store metadata for Config0 run instances
 release: 0.0.1
 author: Gary Leong <gary@config0.com>
 license: GNU General Public License v3.0
@@ -7,6 +7,5 @@ categories:
 tags:
    - config0
    - config0-core
-   - config0
    - metadata
    - run

@@ -1,18 +1,18 @@
 """
-# Copyright (C) 2025 Gary Leong <gary@config0.com>
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Copyright (C) 2025 Gary Leong <gary@config0.com>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 def run(stackargs):
@@ -40,7 +40,7 @@ def run(stackargs):
         match = {}
 
     if stack.ref_schedule_id:
-        match["schedule_id"] = stack.ref_schedule_Id
+        match["schedule_id"] = stack.ref_schedule_id
 
     if stack.resource_type:
         match["resource_type"] = stack.resource_type

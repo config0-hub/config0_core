@@ -1,4 +1,4 @@
-desc: Creates and manages variable sets with support for environment variables, labels, and arguments
+desc: Creates and manages Config0 variable sets with environment variables, labels, and arguments
 release: 0.0.1
 author: Gary Leong <gary@config0.com>
 license: GNU General Public License v3.0

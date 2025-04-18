@@ -9,7 +9,7 @@ This stack handles the cleanup of resources by systematically identifying and re
 
 | Name | Description | Default |
 |------|-------------|---------|
-| ref_schedule_ids | Referenced schedule ID |  |
+| ref_schedule_ids | Referenced schedule ID | &nbsp; |
 | keep_resources | Configuration for keep resources | null |
 
 ### Optional
@@ -18,15 +18,19 @@ This stack handles the cleanup of resources by systematically identifying and re
 |------|-------------|---------|
 | parallel_overide | Configuration for parallel overide | null |
 
-## Features
-- Supports both parallel and sequential resource deletion
-- Allows selective resource preservation through keep_resources parameter
-- Handles resources with parent/child relationships
-- Prioritizes deletion order using checkin values
+## Dependencies
+
+### Execgroups
+- [config0-publish:::github::lambda_trigger_stepf](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/exec/groups/config0-publish/github/lambda_trigger_stepf/default)
+
+### Shelloutconfigs
+- [config0-publish:::terraform::resource_wrapper](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/shelloutconfigs/config0-publish/terraform/resource_wrapper/default)
 
 ## License
+<pre>
 Copyright (C) 2025 Gary Leong <gary@config0.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, version 3 of the License.
+</pre>

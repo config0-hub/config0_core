@@ -18,25 +18,24 @@ This stack allows for the deletion of schedules in Config0, with support for bot
 
 | Name | Description | Default |
 |------|-------------|---------|
-| parallel_overide | Configuration for parallel overide | "null" |
-
-## Features
-
-- Supports both parallel and sequential schedule deletion
-- Can process single IDs or lists of IDs
-- Flexible execution control with parallel override option
-- Handles dependencies between deletion operations
+| parallel_overide | Configuration for parallel override | "null" |
 
 ## Dependencies
 
 ### Substacks
+- [config0:::schedule_delete](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/stacks/config0/schedule_delete/default)
 
-- [schedule delete](https://api-app.config0.com/web_api/v1.0/stacks/config0/schedule_delete)
+### Execgroups
+- [config0-publish:::github::lambda_trigger_stepf](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/exec/groups/config0-publish/github/lambda_trigger_stepf/default)
+
+### Shelloutconfigs
+- [config0-publish:::terraform::resource_wrapper](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/shelloutconfigs/config0-publish/terraform/resource_wrapper/default)
 
 ## License
-
+<pre>
 Copyright (C) 2025 Gary Leong <gary@config0.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, version 3 of the License.
+</pre>

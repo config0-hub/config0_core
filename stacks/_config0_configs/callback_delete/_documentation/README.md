@@ -19,21 +19,23 @@ This stack manages the deletion of resources and schedules in either parallel or
 |------|-------------|---------|
 | parallel | Configuration for parallel overide | true |
 
-## Features
-- Ability to delete resources in parallel or sequential order
-- Option to keep specific resources during deletion
-- Supports grouping schedules for efficient deletion management
-- Two-phase deletion process (resources first, then schedules)
-
 ## Dependencies
 
 ### Substacks
-- [config0-publish:::delete_schedules](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/delete_schedules)
-- [config0-publish:::delete_resources_by_time](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/delete_resources_by_time)
+- [config0-publish:::delete_schedules](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/stacks/config0-publish/delete_schedules/default)
+- [config0-publish:::delete_resources_by_time](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/stacks/config0-publish/delete_resources_by_time/default)
+
+### Execgroups
+- [config0-publish:::github::lambda_trigger_stepf](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/exec/groups/config0-publish/github/lambda_trigger_stepf/default)
+
+### Shelloutconfigs
+- [config0-publish:::terraform::resource_wrapper](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/shelloutconfigs/config0-publish/terraform/resource_wrapper/default)
 
 ## License
+<pre>
 Copyright (C) 2025 Gary Leong <gary@config0.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, version 3 of the License.
+</pre>

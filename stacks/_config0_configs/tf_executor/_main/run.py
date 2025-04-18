@@ -20,14 +20,13 @@ import json
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.utilities import print_json
 
-class CmEnvVars(object):
 
+class CmEnvVars(object):
     """
-    some common methods to be inherited
+    Some common methods to be inherited
     """
 
     def __init__(self, stack):
-
         self.classname = "CmEnvVars"
         self.stack = stack
         self.env_vars = {}
@@ -69,14 +68,12 @@ class CmEnvVars(object):
 
     @staticmethod
     def _default():
-
         return {
             "TIMEOUT": "600"
         }
 
     @staticmethod
     def _default_codebuild():
-
         return {
             "AWS_DEFAULT_REGION": "us-east-1",
             "CODEBUILD_IMAGE": "aws/codebuild/standard:4.0",
@@ -86,13 +83,11 @@ class CmEnvVars(object):
 
     @staticmethod
     def _default_lambda():
-
         return {
             "AWS_DEFAULT_REGION": "us-east-1"
         }
 
     def add(self, keys, default_values=None, clobber=False):
-
         if default_values:
             keys.extend(default_values.keys())
 
@@ -107,7 +102,6 @@ class CmEnvVars(object):
                 self.env_vars[key] = default_values[key]
 
     def set_lambda(self, reset=False):
-
         if reset:
             self.reset()
 
@@ -115,7 +109,6 @@ class CmEnvVars(object):
                  self._default_lambda())
 
     def set_codebuild(self, reset=False):
-
         if reset:
             self.reset()
 
@@ -123,7 +116,6 @@ class CmEnvVars(object):
                  self._default_codebuild())
 
     def set_resource(self, reset=False):
-
         if reset:
             self.reset()
 
@@ -135,7 +127,6 @@ class CmEnvVars(object):
         self.update(env_vars)
 
     def update(self, env_vars=None):
-
         if not env_vars:
             return
 
@@ -145,7 +136,6 @@ class CmEnvVars(object):
             self.env_vars[key.upper()] = value
 
     def set_common(self, reset=False):
-
         if reset:
             self.reset()
 
@@ -156,7 +146,6 @@ class CmEnvVars(object):
         self.env_vars = {}
 
     def validate(self, env_vars=None, include_num=None):
-
         if not env_vars:
             env_vars = self.env_vars
 
@@ -177,7 +166,6 @@ class CmEnvVars(object):
                 env_vars[_key] = "None"
 
     def insert(self, env_vars=None, add_env_vars=None, include_num=None):
-
         # this env vars is for the stack and execgroup execution
         # we need to specify create which will then
 
@@ -188,7 +176,6 @@ class CmEnvVars(object):
             env_vars = self.env_vars
 
         for _key, _value in add_env_vars.items():
-
             if _key in env_vars:
                 continue
 
@@ -197,15 +184,14 @@ class CmEnvVars(object):
         self.validate(env_vars,
                       include_num=include_num)
 
-class TFRunExec(object):
 
+class TFRunExec(object):
     """
     The runtimes include AWS Codebuild, Lambda function, or docker container
     to execute the Terraform/OpenTofu code
     """
 
     def __init__(self, stack):
-
         self.stack = stack
         self._set_tf_runtime()
 
@@ -229,7 +215,6 @@ class TFRunExec(object):
 
     # ref 3241245124321
     def _set_tf_runtime(self):
-
         _tf_binary = None
         _tf_version = None
 
@@ -245,14 +230,13 @@ class TFRunExec(object):
                                 f"{_tf_binary}:{_tf_version}")
 
     def _add_aws_ssm(self):
-
         if not self.stack.get_attr("ssm_name"):
             return
 
         self.env_vars["SSM_NAME"] = self.stack.ssm_name
 
-class Config0Resource:
 
+class Config0Resource:
     """
     This variables and settings to insert the resource, which
     is typically a cloud infrastructure in the Config0 resource db.
@@ -261,7 +245,6 @@ class Config0Resource:
     """
 
     def __init__(self, stack):
-
         self.stack = stack
 
         # set additional vars
@@ -278,7 +261,6 @@ class Config0Resource:
         self._set_base_values()
 
     def _parse_resource_configs(self):
-
         resource_configs = self.stack.resource_configs
 
         if resource_configs.get("output_keys"):
@@ -305,7 +287,6 @@ class Config0Resource:
             self.values["drift_protection"] = True
 
     def _set_env_vars(self):
-
         cmvars = CmEnvVars(stack=self.stack)
         cmvars.set_common()
         cmvars.set_resource()
@@ -315,7 +296,6 @@ class Config0Resource:
                         include_num=False)
 
     def _set_base_values(self):
-
         self.values["resource_type"] = self.type
         self.values["name"] = self.name
         self.values["provider"] = self.provider
@@ -325,7 +305,6 @@ class Config0Resource:
             self.values["resource_id"] = self.stack.resource_id
 
     def get_inputargs(self):
-
         human_description = (
             f'creating resource type: "{self.type}" name: "{self.name}"'
         )
@@ -352,7 +331,6 @@ class Config0Resource:
         return inputargs
 
     def get_output_inputargs(self):
-
         if not self.output_keys:
             return
 
@@ -375,14 +353,13 @@ class Config0Resource:
             "human_description": f'Output resource name "{self.name}" type "{self.type}"',
         }
 
-class TFConfigHelper(object):
 
+class TFConfigHelper(object):
     """
     The Terraform Execution Helper that helps organize and manage
     things like TF vars that are used to create terraform.tfvars file
     """
     def __init__(self, stack):
-
         self.classname = 'TFConfigHelper'
         self.logger = Config0Logger(self.classname)
         self.logger.debug(f"Instantiating {self.classname}")
@@ -396,7 +373,6 @@ class TFConfigHelper(object):
         self.config0_resource = Config0Resource(self.stack)
 
     def _get_tf_configs(self):
-
         if self.stack.get_attr("cloud_tags_hash"):
             self.tf_vars["cloud_tags"] = {
                 "value": json.dumps(self.stack.b64_decode(self.stack.cloud_tags_hash)),
@@ -440,7 +416,6 @@ class TFConfigHelper(object):
         return tf_configs
 
     def _add_provider_maps(self, tf_configs):
-
         if self.stack.get_attr("provider") == "aws":
             try:
                 tf_configs["resource_configs"]["maps"] = {
@@ -458,7 +433,6 @@ class TFConfigHelper(object):
                 self.logger.debug("could not add map keys for do")
 
     def _add_cloudprovider(self):
-
         # add cloud provider specific regions
         if self.config0_resource.values.get("aws_default_region"):
             self.config0_resource.values["region"] = self.config0_resource.values["aws_default_region"]
@@ -466,7 +440,6 @@ class TFConfigHelper(object):
             self.config0_resource.values["region"] = self.config0_resource.values["do_region"]
 
     def _get_config0_resource_exec_settings(self):
-
         self._add_cloudprovider()
 
         _settings = {
@@ -488,7 +461,6 @@ class TFConfigHelper(object):
         return _settings
 
     def get_execgroup_inputargs(self):
-
         # add the main env var
         _settings = self._get_config0_resource_exec_settings()
         self.config0_resource.env_vars["CONFIG0_RESOURCE_EXEC_SETTINGS_HASH"] = self.stack.b64_encode(_settings)
@@ -498,8 +470,8 @@ class TFConfigHelper(object):
     def get_output_inputargs(self):
         return self.config0_resource.get_output_inputargs()
 
-def run(stackargs):
 
+def run(stackargs):
     stack = newStack(stackargs)
 
     stack.parse.add_required(key="provider",

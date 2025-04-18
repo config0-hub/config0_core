@@ -1,4 +1,4 @@
-desc: Reports execution status back to Config0 SaaS platform
+desc: Reports execution status and handles payload transfers to Config0 SaaS platform
 release: 1.0.1
 author: Gary Leong <gary@config0.com>
 license: GNU General Public License v3.0

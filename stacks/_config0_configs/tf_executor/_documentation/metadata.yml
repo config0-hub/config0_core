@@ -1,5 +1,7 @@
 desc: Framework for managing Terraform/OpenTofu resource execution and Config0 resource database integration
 release: 0.0.1
+author: Gary Leong <gary@config0.com>
+license: GPL-3.0
 categories: 
    - config0-core
    - authoring

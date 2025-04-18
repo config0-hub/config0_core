@@ -19,7 +19,7 @@ def run(stackargs):
 
     stack = newStack(stackargs)
 
-    # required stack args
+    # Required stack args
     stack.parse.add_required(key="parallel_ids",
                              default="null")
 
@@ -29,8 +29,7 @@ def run(stackargs):
     stack.parse.add_required(key="keep_resources",
                              default='[ {"provider":"aws","resource_type":"ecr_repo"} ]')
 
-    # this is parallel overide to delete resources and schedules in parallel
-    # we name it "parallel" to keep it simple
+    # This is parallel override to delete resources and schedules in parallel
     stack.parse.add_optional(key="parallel",
                              default="true")
 

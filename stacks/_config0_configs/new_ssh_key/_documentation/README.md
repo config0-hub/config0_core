@@ -8,7 +8,7 @@ This stack creates SSH keys for secure resource access in cloud environments. It
 ### Required
 | Name | Description | Default |
 |------|-------------|---------|
-| key_name or name | SSH key identifier for resource access |  |
+| key_name or name | SSH key identifier for resource access | &nbsp; |
 
 ### Optional
 | Name | Description | Default |
@@ -21,20 +21,19 @@ This stack creates SSH keys for secure resource access in cloud environments. It
 | job_id | config0 builtin - id of job in a schedule | null |
 | clobber | Clobber/delete key if it exists | null |
 
-## Features
-- Creates SSH keys with unique identifiers
-- Option to clobber (delete and recreate) existing keys
-- Tracks job and schedule metadata for config0 integration
-- Associates keys with appropriate run context (job, schedule, etc.)
-
 ## Dependencies
 
-### Substacks
-- [cloud/ssh_keys:::ssh_key](https://api-app.config0.com/web_api/v1.0/stacks/cloud/ssh_keys)
+### Shelloutconfigs
+- [config0-publish:::terraform::resource_wrapper](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/shelloutconfigs/config0-publish/terraform/resource_wrapper/default)
+
+### Execgroups
+- [config0-publish:::github::lambda_trigger_stepf](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/exec/groups/config0-publish/github/lambda_trigger_stepf/default)
 
 ## License
+<pre>
 Copyright (C) 2025 Gary Leong <gary@config0.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, version 3 of the License.
+</pre>

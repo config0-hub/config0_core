@@ -15,8 +15,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-def run(stackargs):
 
+def run(stackargs):
+    """Process stack arguments and return results."""
     #####################################
     stack = newStack(stackargs)
     #####################################

@@ -17,11 +17,11 @@
 
 
 def run(stackargs):
-
+    """Process worker information and return results."""
     stack = newStack(stackargs)
 
-    # if you want to look up a worker with a different run_id
-    # very uncommon
+    # If you want to look up a worker with a different run_id
+    # Very uncommon
     stack.parse.add_required(key="overide_run_id", default="null")
 
     # Initialize Variables in stack

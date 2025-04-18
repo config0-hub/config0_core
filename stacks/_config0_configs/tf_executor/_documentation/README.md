@@ -9,11 +9,11 @@ This module manages Terraform/OpenTofu resource execution and interacts with the
 
 | Name | Description | Default |
 |------|-------------|---------|
-| provider | Cloud provider to use (aws, do, etc.) | |
-| execgroup_ref | Reference to the execution group | |
-| resource_name | Name of the resource to be created | |
-| resource_type | Resource type used to categorize main IaC code/automation | |
-| resource_configs_hash | Base64 encoded resource configuration | |
+| provider | Cloud provider to use (aws, do, etc.) | &nbsp; |
+| execgroup_ref | Reference to the execution group | &nbsp; |
+| resource_name | Name of the resource to be created | &nbsp; |
+| resource_type | Resource type used to categorize main IaC code/automation | &nbsp; |
+| resource_configs_hash | Base64 encoded resource configuration | &nbsp; |
 
 ### Optional Variables
 
@@ -32,29 +32,25 @@ This module manages Terraform/OpenTofu resource execution and interacts with the
 | iac_ci_pr_strategy | Configuration for iac ci pr strategy (choices: branch, folder) | branch |
 | create_remote_state | Boolean to create remote state | true |
 | drift_protection | Boolean to enable drift detection | true |
-| ssm_name | SSM parameter name | |
-
-## Features
-- Terraform/OpenTofu execution in various environments (AWS CodeBuild, Lambda, Docker)
-- Resource state management
-- Infrastructure as Code (IaC) CI/CD integration
-- Drift protection for infrastructure resources
-- Environment variable management for execution contexts
-- Cloud provider resource tagging
-- Output publishing to Config0 SaaS UI
+| ssm_name | SSM parameter name | &nbsp; |
 
 ## Dependencies
 
 ### Substacks
-- [config0-publish:::output_resource_to_ui](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/output_resource_to_ui)
-- [config0-publish:::setup_iac_ci_on_github](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/setup_iac_ci_on_github)
+- [config0-publish:::output_resource_to_ui](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/stacks/config0-publish/output_resource_to_ui/default)
+- [config0-publish:::setup_iac_ci_on_github](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/stacks/config0-publish/setup_iac_ci_on_github/default)
 
 ### Execgroups
-- The execgroup is dynamically specified via the `execgroup_ref` parameter
+- [config0-publish:::github::lambda_trigger_stepf](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/exec/groups/config0-publish/github/lambda_trigger_stepf/default)
+
+### Shelloutconfigs
+- [config0-publish:::terraform::resource_wrapper](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/shelloutconfigs/config0-publish/terraform/resource_wrapper/default)
 
 ## License
+<pre>
 Copyright (C) 2025 Gary Leong <gary@config0.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, version 3 of the License.
+</pre>

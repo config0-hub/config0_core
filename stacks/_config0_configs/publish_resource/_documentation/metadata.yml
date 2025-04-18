@@ -1,4 +1,4 @@
-desc: Retrieves and publishes resource properties to the Config0 UI
+desc: Retrieves and publishes resource properties to the Config0 UI for display and management
 release: 0.0.1
 author: Gary Leong <gary@config0.com>
 license: GNU General Public License v3.0
