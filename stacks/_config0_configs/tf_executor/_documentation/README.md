@@ -28,7 +28,7 @@ This module manages Terraform/OpenTofu resource execution and interacts with the
 | stateful_id | Stateful ID for storing the resource code/state | _random |
 | remote_stateful_bucket | S3 bucket for Terraform state | null |
 | publish_to_saas | Boolean to publish values to config0 SaaS UI | true |
-| tf_runtime | Terraform runtime version | tofu:1.6.2 |
+| tf_runtime | Terraform runtime version | tofu:1.9.1 |
 | iac_ci_pr_strategy | Configuration for iac ci pr strategy (choices: branch, folder) | branch |
 | create_remote_state | Boolean to create remote state | true |
 | drift_protection | Boolean to enable drift detection | true |

@@ -527,7 +527,7 @@ def run(stackargs):
                              types="bool")
 
     stack.parse.add_optional(key="tf_runtime",
-                             default="tofu:1.6.2",
+                             default="tofu:1.9.1",
                              types="str")
 
     stack.parse.add_optional(key="iac_ci_pr_strategy",
