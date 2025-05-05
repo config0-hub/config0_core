@@ -41,48 +41,9 @@ def run(stackargs):
 
     # Delete key if clobber
     if stack.get_attr("clobber"):
-        cmd = "ssh_key delete"
-        order_type = "create-ssh_key::api"
-        role = "cloud/ssh_keys"
-
-        overide_values = {"name": stack.key_name}
-        human_description = f"Deletes ssh_key {stack.key_name} if it exists"
-
-        stack.insert_builtin_cmd(cmd,
-                                 order_type=order_type,
-                                 role=role,
-                                 human_description=human_description,
-                                 display=True,
-                                 overide_values=overide_values)
+        stack.delete_ssh_key(stack.key_name)
 
     # Create key
-    cmd = "ssh_key create"
-    order_type = "create-ssh_key::api"
-    role = "cloud/ssh_keys"
-
-    default_values = {}
-    overide_values = {"name": stack.key_name}
-
-    if stack.get_attr("schedule_id"):
-        default_values["schedule_id"] = stack.schedule_id
-
-    if stack.get_attr("job_instance_id"):
-        default_values["job_instance_id"] = stack.job_instance_id
-
-    if stack.get_attr("run_id"):
-        default_values["run_id"] = stack.run_id
-
-    if stack.get_attr("job_id"):
-        default_values["job_id"] = stack.job_id
-
-    human_description = f"Generate new ssh_key {stack.key_name} if it does not exists"
-
-    stack.insert_builtin_cmd(cmd,
-                             order_type=order_type,
-                             role=role,
-                             human_description=human_description,
-                             display=True,
-                             overide_values=overide_values,
-                             default_values=default_values)
+    stack.create_ssh_key(stack.key_name)
 
     return stack.get_results()

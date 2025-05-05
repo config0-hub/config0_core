@@ -29,12 +29,7 @@ def run(stackargs):
     stack.init_variables()
 
     # Do parallel schedule deletes
-    default_values = {}
-    cmd = 'schedule delete'
-    role = "schedule/delete"
-    order_type = "delete_sched::api"
-
-    if stack.get_attr("parallel_ids") and not isinstance(stack.parallel_ids, list): 
+    if stack.get_attr("parallel_ids") and not isinstance(stack.parallel_ids, list):
         stack.parallel_ids = [stack.parallel_ids]
 
     if stack.get_attr("sequential_ids") and not isinstance(stack.sequential_ids, list): 
@@ -52,41 +47,15 @@ def run(stackargs):
 
     # parallel overide set True
     if stack.get_attr("parallel_overide") and all_schedule_ids:
-
         stack.logger.debug("Executing delete schedule_ids in parallel")
-
         for num, parallel_id in enumerate(all_schedule_ids):
-            default_values["ref_schedule_id"] = parallel_id
-            human_description = f'Delete schedule_id "{parallel_id}"'
-
-            stack.insert_builtin_cmd(cmd,
-                                     order_type=order_type,
-                                     human_description=human_description,
-                                     display=None,
-                                     role=role,
-                                     default_values=default_values)
-
-            # We need a reference for the dependencies for parallelism
-            # if num == 0: stack.set_parallel()
-
+            stack.delete_schedule(parallel_id)
         return stack.get_results(None)
 
     # Delete parallel schedules
     if stack.get_attr("parallel_ids"):
-
         for num, parallel_id in enumerate(stack.parallel_ids):
-            default_values["ref_schedule_id"] = parallel_id
-            human_description = f'Delete schedule_id "{parallel_id}"'
-
-            stack.insert_builtin_cmd(cmd,
-                                     order_type=order_type,
-                                     human_description=human_description,
-                                     display=None,
-                                     role=role,
-                                     default_values=default_values)
-
-            # We need a reference for the dependencies for parallelism
-            # if num == 0: stack.set_parallel()
+            stack.delete_schedule(parallel_id)
 
     # Delete sequential ids
     if not stack.get_attr("sequential_ids"):
@@ -99,14 +68,5 @@ def run(stackargs):
     stack.wait_all()
 
     for sequential_id in stack.sequential_ids:
-        default_values["ref_schedule_id"] = sequential_id
-        human_description = f'Delete schedule_id "{sequential_id}"'
-
-        stack.insert_builtin_cmd(cmd,
-                                 order_type=order_type,
-                                 human_description=human_description,
-                                 display=None,
-                                 role=role,
-                                 default_values=default_values)
-
+        stack.delete_schedule(sequential_id)
     return stack.get_results(None)

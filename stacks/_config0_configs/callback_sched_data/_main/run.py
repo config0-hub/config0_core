@@ -70,10 +70,8 @@ def run(stackargs):
         "http_method": "post",
         "api_endpoint": stack.callback_api_endpoint,
         "callback": stack.callback_token,
-        "values": f"{str(stack.dict2str(values))}"
+        "values": f"{str(stack.to_str(values))}"
     }
-
-    human_description = f"Report/callback to SaasS schedule_id={stack.schedule_id}, run_id={stack.run_id}"
 
     if stack.get_attr("payload_hash"):
         payload = stack.b64_decode(stack.payload_hash)
@@ -86,11 +84,6 @@ def run(stackargs):
         stack.add_dict_to_s3(payload,
                              bucket_key=stack.bucket_key)
 
-    stack.insert_builtin_cmd("execute restapi",
-                             order_type="saas-report_sched::api",
-                             default_values=default_values,
-                             human_description=human_description,
-                             display=True,
-                             role="config0/api/execute")
+    stack.execute_restapi(default_values)
 
     return stack.get_results()
