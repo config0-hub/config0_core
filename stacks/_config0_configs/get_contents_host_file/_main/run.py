@@ -17,9 +17,7 @@
 
 def run(stackargs):
 
-    #####################################
     stack = newStack(stackargs)
-    #####################################
 
     stack.parse.add_required(key="hostname")
     stack.parse.add_required(key="ssh_key_name")
@@ -34,6 +32,6 @@ def run(stackargs):
                                          ssh_key_name=stack.ssh_key_name)
 
     pipeline_env_var = {f"{stack.key}": str(contents)}
-    stack.publish(pipeline_env_var)
+    stack.output_to_ui(pipeline_env_var)
 
     return stack.get_results(stackargs.get("destroy_instance"))

@@ -113,7 +113,6 @@ def run(stackargs):
             resource[f"{stack.prefix_key}/{_key}"] = _value
             del resource[_key]
 
-    stack.logger.json(resource)
-    stack.publish(resource)
+    stack.output_to_ui(resource)
 
     return stack.get_results()

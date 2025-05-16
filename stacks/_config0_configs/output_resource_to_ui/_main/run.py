@@ -136,6 +136,6 @@ def run(stackargs):
             del resource[_change["old_key"]]
             resource[_change["new_key"]] = _change["value"]
 
-    stack.publish(resource)
+    stack.output_to_ui(resource)
 
     return stack.get_results()

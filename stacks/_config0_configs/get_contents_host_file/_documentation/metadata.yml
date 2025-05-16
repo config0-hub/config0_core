@@ -1,4 +1,4 @@
-desc: Fetches contents of remote files from hosts via SSH and publishes as environment variables
+desc: Fetches contents of remote files from hosts via SSH.
 release: 0.0.1
 author: Gary Leong <gary@config0.com>
 license: GNU General Public License v3

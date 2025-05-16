@@ -29,6 +29,6 @@ def run(stackargs):
 
     worker_info = stack.get_worker_info(run_id=stack.overide_run_id)
 
-    stack.publish(worker_info)
+    stack.output_to_ui(worker_info)
 
     return stack.get_results()
