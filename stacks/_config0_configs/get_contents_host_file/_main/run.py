@@ -22,11 +22,13 @@ def run(stackargs):
     stack.parse.add_required(key="remote_file")
     stack.parse.add_required(key="key")
 
-    stack.parse.add_optional(key="hostname")
     stack.parse.add_optional(key="ssh_key_name",
                              default="null")
+    stack.parse.add_optional(key="hostname",
+                             default="null")
 
-    stack.parse.add_optional(key="ipaddress")
+    stack.parse.add_optional(key="ipaddress",
+                             default="null")
     stack.parse.add_optional(key="private_key_hash",
                              default="null")
 
