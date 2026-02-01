@@ -1,0 +1,14 @@
+desc: Manages deletion of resources and schedules in parallel or sequential order
+release: 0.0.1
+author: Gary Leong <gary@config0.com>
+license: GNU General Public License v3
+categories: 
+   - config0_saas
+tags:
+   - config0_saas
+   - saas
+   - schedule
+   - delete
+   - engine
+   - resources
+   - parallel

@@ -1,0 +1,14 @@
+desc: Retrieves and publishes resource data to Config0 UI with key filtering, mapping, and prefixing
+release: 0.0.1
+author: Gary Leong <gary@config0.com>
+license: GPL-3.0
+categories: 
+   - config0-core
+   - authoring
+tags:
+   - config0-core
+   - config0
+   - run
+   - publish
+   - output
+   - resource

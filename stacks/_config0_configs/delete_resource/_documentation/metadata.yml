@@ -1,0 +1,14 @@
+desc: Safely destroys a single Config0 resource by matching specific criteria
+release: 0.0.1
+author: Gary Leong <gary@config0.com>
+license: GNU General Public License v3.0
+categories: 
+   - config0_saas
+tags:
+   - config0_saas
+   - saas
+   - schedule
+   - delete
+   - destroy
+   - resources
+   - engine
