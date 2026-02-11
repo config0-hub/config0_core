@@ -1,0 +1,16 @@
+desc: Creates and manages Config0 variable sets with environment variables, labels, and arguments
+release: 0.0.1
+author: Gary Leong <gary@config0.com>
+license: GNU General Public License v3.0
+categories: 
+   - config0-core
+   - vars_set
+tags:
+   - config0-core
+   - config0
+   - debug
+   - selectors
+   - labels
+   - vars_set
+   - variables
+   - set

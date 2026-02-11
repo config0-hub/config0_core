@@ -1,0 +1,11 @@
+desc: Add and store metadata for Config0 run instances
+release: 0.0.1
+author: Gary Leong <gary@config0.com>
+license: GNU General Public License v3.0
+categories: 
+   - config0_saas
+tags:
+   - config0
+   - config0-core
+   - metadata
+   - run

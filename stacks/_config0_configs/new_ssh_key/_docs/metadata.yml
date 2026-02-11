@@ -1,0 +1,11 @@
+desc: Creates SSH keys for secure resource access in cloud environments.
+release: 0.0.1
+author: Gary Leong <gary@config0.com>
+license: GNU GPL v3
+categories: 
+   - ssh_key
+   - config0-core
+tags:
+   - config0-core
+   - ssh_key
+   - infrastructure
