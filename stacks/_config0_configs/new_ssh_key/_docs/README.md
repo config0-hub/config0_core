@@ -26,7 +26,7 @@ This stack creates SSH keys for secure resource access in cloud environments. It
 ### Substacks
 None
 
-### Shelloutconfigs
+### Scripts
 None
 
 ### Execgroups

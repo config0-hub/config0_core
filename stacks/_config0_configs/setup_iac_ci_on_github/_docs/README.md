@@ -21,8 +21,8 @@ This stack sets up Infrastructure as Code Continuous Integration (IAC CI) for st
 
 ## Dependencies
 
-### Shelloutconfigs
-- [config0-publish:::config0_core::iac_ci_s3_to_repo](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/shelloutconfigs/config0-publish/config0_core/iac_ci_s3_to_repo/default)
+### Scripts
+- [config0-hub:::config0_core::iac_ci_s3_to_repo](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/scripts/config0-hub/config0_core/iac_ci_s3_to_repo/default)
 
 ## License
 <pre>

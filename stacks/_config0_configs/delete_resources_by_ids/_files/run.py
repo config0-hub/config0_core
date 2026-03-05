@@ -27,7 +27,7 @@ def run(stackargs):
                              default="true")
 
     # Add substacks
-    stack.add_substack('config0-publish:::delete_resource')
+    stack.add_substack('config0-hub:::config0_core::delete_resource')
 
     # Initialize
     stack.init_variables()

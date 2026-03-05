@@ -20,7 +20,7 @@ This stack handles the cleanup of resources by systematically identifying and re
 
 ## Dependencies
 
-No dependencies (substacks, execgroups, or shelloutconfigs) are identified in the current code.
+No dependencies (substacks, execgroups, or scripts) are identified in the current code.
 
 ## License
 <pre>

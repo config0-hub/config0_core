@@ -25,7 +25,7 @@ This stack retrieves a specified resource from the Config0 database and publishe
 
 ## Dependencies
 
-The stack has no dependencies as it doesn't use any substacks, execgroups, or shelloutconfigs.
+The stack has no dependencies as it doesn't use any substacks, execgroups, or scripts.
 
 ### Substacks
 None
@@ -33,7 +33,7 @@ None
 ### Execgroups
 None
 
-### Shelloutconfigs
+### Scripts
 None
 
 ## License

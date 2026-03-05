@@ -28,7 +28,7 @@ def run(stackargs):
     stack.parse.add_optional(key="resource_type",
                              default="null")
 
-    stack.add_substack('config0-publish:::config0_core::check_drift_resource')
+    stack.add_substack('config0-hub:::config0_core::check_drift_resource')
 
     # Initialize Variables in stack
     stack.init_variables()

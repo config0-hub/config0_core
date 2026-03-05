@@ -22,8 +22,8 @@ This stack manages the deletion of resources and schedules in either parallel or
 ## Dependencies
 
 ### Substacks
-- [config0-publish:::delete_schedules](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/delete_schedules)
-- [config0-publish:::delete_resources_by_time](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/delete_resources_by_time)
+- [config0-hub:::config0_core::delete_schedules](https://api-app.config0.com/web_api/v1.0/stacks/config0-hub/delete_schedules)
+- [config0-hub:::config0_core::delete_resources_by_time](https://api-app.config0.com/web_api/v1.0/stacks/config0-hub/delete_resources_by_time)
 
 ## License
 <pre>

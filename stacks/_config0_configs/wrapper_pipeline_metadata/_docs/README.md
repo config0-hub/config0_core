@@ -18,8 +18,8 @@ This stack is designed to add run metadata to the Config0 platform. It takes pro
 
 ## Dependencies
 
-### ShelloutConfigs
-- [config0-publish:::terraform::resource_wrapper](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/shelloutconfigs/config0-publish/terraform/resource_wrapper/default)
+### Scripts
+- [config0-hub:::terraform::resource_wrapper](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/scripts/config0-hub/terraform/resource_wrapper/default)
 
 ## License
 <pre>

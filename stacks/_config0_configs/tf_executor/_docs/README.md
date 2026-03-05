@@ -36,14 +36,14 @@ This module manages Terraform/OpenTofu resource execution and interacts with the
 ## Dependencies
 
 ### Substacks
-- [config0-publish:::output_resource_to_ui](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/output_resource_to_ui)
-- [config0-publish:::setup_iac_ci_on_github](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/setup_iac_ci_on_github)
+- [config0-hub:::config0_core::output_resource_to_ui](https://api-app.config0.com/web_api/v1.0/stacks/config0-hub/output_resource_to_ui)
+- [config0-hub:::config0_core::setup_iac_ci_on_github](https://api-app.config0.com/web_api/v1.0/stacks/config0-hub/setup_iac_ci_on_github)
 
 ### Execgroups
 - The execgroup identified by `stack.execgroup_ref` with type "cloud_resource"
 
-### Shelloutconfigs
-- No shelloutconfigs are explicitly added in the provided code
+### Scripts
+- No scripts are explicitly added in the provided code
 
 ## License
 <pre>

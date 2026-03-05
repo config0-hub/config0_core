@@ -13,12 +13,12 @@ This stack creates a debug machine that sleeps for a configurable amount of time
 ## Dependencies
 
 ### Substacks
-- [config0-publish:::config0_core::publish_worker](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/config0_core/publish_worker)
+- [config0-hub:::config0_core::publish_worker](https://api-app.config0.com/web_api/v1.0/stacks/config0-hub/config0_core/publish_worker)
 
 ### Execgroups
 None
 
-### Shelloutconfigs
+### Scripts
 - Shell command: sleep (added with `stack.add_external_cmd`)
 
 ## License

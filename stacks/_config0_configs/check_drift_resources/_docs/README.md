@@ -19,9 +19,9 @@ This stack checks for configuration drift across resources with drift protection
 ## Dependencies
 
 ### Substacks
-- [config0-publish:::config0_core::check_drift_resource](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/config0_core/check_drift_resource)
+- [config0-hub:::config0_core::check_drift_resource](https://api-app.config0.com/web_api/v1.0/stacks/config0-hub/config0_core/check_drift_resource)
 
-### Shelloutconfigs
+### Scripts
 None
 
 ### Execgroups

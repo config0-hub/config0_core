@@ -29,7 +29,7 @@ None
 ### Execgroups
 None
 
-### Shelloutconfigs
+### Scripts
 None
 
 ## License

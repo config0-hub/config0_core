@@ -1,7 +1,7 @@
 # Delete Resources by IDs Stack
 
 ## Description
-This stack deletes Config0 resources by their document IDs. It accepts a comma-separated list of resource `db_ids` and calls `config0-publish:::delete_resource` once per ID. Deletions can run in parallel or sequentially.
+This stack deletes Config0 resources by their document IDs. It accepts a comma-separated list of resource `db_ids` and calls `config0-hub:::config0_core::delete_resource` once per ID. Deletions can run in parallel or sequentially.
 
 ## Variables
 
@@ -20,7 +20,7 @@ This stack deletes Config0 resources by their document IDs. It accepts a comma-s
 ## Dependencies
 
 ### Substacks
-- [config0-publish:::delete_resource](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/delete_resource)
+- [config0-hub:::config0_core::delete_resource](https://api-app.config0.com/web_api/v1.0/stacks/config0-hub/delete_resource)
 
 ## License
 <pre>

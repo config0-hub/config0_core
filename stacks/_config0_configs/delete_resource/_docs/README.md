@@ -18,7 +18,7 @@ This stack enables the destruction of resources in Config0 by matching specified
 
 ## Dependencies
 
-Based on the code analysis, this stack doesn't explicitly declare any dependencies using `add_execgroup`, `add_shelloutconfig`, or `add_substack` methods. It appears to be a standalone utility that relies only on the core functionality of the Config0 framework.
+Based on the code analysis, this stack doesn't explicitly declare any dependencies using `add_execgroup`, `add_script`, or `add_substack` methods. It appears to be a standalone utility that relies only on the core functionality of the Config0 framework.
 
 ### Substacks
 
@@ -28,7 +28,7 @@ None
 
 None
 
-### ShelloutConfigs
+### Scripts
 
 None
 

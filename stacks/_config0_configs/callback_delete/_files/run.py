@@ -34,8 +34,8 @@ def run(stackargs):
                              default="true")
 
     # Add substacks
-    stack.add_substack('config0-publish:::delete_schedules')
-    stack.add_substack('config0-publish:::delete_resources_by_time')
+    stack.add_substack('config0-hub:::config0_core::delete_schedules')
+    stack.add_substack('config0-hub:::config0_core::delete_resources_by_time')
 
     # Initialize
     stack.init_variables()
