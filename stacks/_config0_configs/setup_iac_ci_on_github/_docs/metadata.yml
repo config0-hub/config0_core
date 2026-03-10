@@ -1,18 +1,12 @@
 desc: Setup IAC CI for infrastructure code management between S3 and git repositories
-release: 0.0.1
+release: 0.3.0
 author: Gary Leong <gary@config0.com>
-license: GPLv3
-categories: 
-   - config0-core
-   - authoring
-   - terraform
+license: GPL-3.0
+categories:
+   - builtin
+   - infrastructure
+   - cicd
 tags:
-   - config0-core
-   - config0
+   - builtin
    - terraform
-   - helper
    - iac
-   - aws
-   - gcp
-   - digitalocean
-   - do

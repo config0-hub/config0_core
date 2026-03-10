@@ -39,7 +39,7 @@ def run(stackargs):
                              types="str")
 
     # add scripts
-    stack.add_script('config0-hub:::config0_core::iac_ci_s3_to_repo')
+    stack.add_script('config0-hub:::config0_core::iac_ci_s3_to_repo.sh')
 
     # initialize
     stack.init_variables()

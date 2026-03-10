@@ -1,13 +1,13 @@
 desc: Resource validation stack that verifies existence and uniqueness by ID with optional type and schedule filtering
-release: 0.0.1
+release: 0.5.0
 author: Gary Leong <gary@config0.com>
 license: GPL-3.0
-categories: 
-   - config0_saas
+categories:
+   - builtin
+   - infrastructure
 tags:
-   - config0_saas
-   - saas
+   - builtin
    - schedule
    - validate
    - resources
-   - engine
+   - drift
