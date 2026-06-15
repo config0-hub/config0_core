@@ -15,13 +15,14 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-import os
 import json
+import os
+
+from config0_publisher.json_helpers import print_json
 from config0_publisher.loggerly import Config0Logger
-from config0_publisher.utilities import print_json
 
 
-class CmEnvVars(object):
+class CmEnvVars:
     """
     Some common methods to be inherited
     """
@@ -184,7 +185,7 @@ class CmEnvVars(object):
                       include_num=include_num)
 
 
-class TFRunExec(object):
+class TFRunExec:
     """
     The runtimes include AWS Codebuild, Lambda function, or docker container
     to execute the Terraform/OpenTofu code
@@ -353,7 +354,7 @@ class Config0Resource:
         }
 
 
-class TFConfigHelper(object):
+class TFConfigHelper:
     """
     The Terraform Execution Helper that helps organize and manage
     things like TF vars that are used to create terraform.tfvars file
