@@ -32,15 +32,15 @@ def run(stackargs):
     if stack.get_attr("parallel_ids") and not isinstance(stack.parallel_ids, list):
         stack.parallel_ids = [stack.parallel_ids]
 
-    if stack.get_attr("sequential_ids") and not isinstance(stack.sequential_ids, list): 
+    if stack.get_attr("sequential_ids") and not isinstance(stack.sequential_ids, list):
         stack.sequential_ids = [stack.sequential_ids]
 
     all_schedule_ids = []
 
-    if stack.get_attr("parallel_ids"): 
+    if stack.get_attr("parallel_ids"):
         all_schedule_ids.extend(stack.parallel_ids)
 
-    if stack.get_attr("sequential_ids"): 
+    if stack.get_attr("sequential_ids"):
         all_schedule_ids.extend(stack.sequential_ids)
 
     stack.set_parallel()
@@ -48,14 +48,14 @@ def run(stackargs):
     # parallel overide set True
     if stack.get_attr("parallel_overide") and all_schedule_ids:
         stack.logger.debug("Executing delete schedule_ids in parallel")
-        for num, parallel_id in enumerate(all_schedule_ids):
-            stack.delete_schedule(parallel_id)
+        for _num, parallel_id in enumerate(all_schedule_ids):
+            stack.remove_schedule(parallel_id)
         return stack.get_results(None)
 
     # Delete parallel schedules
     if stack.get_attr("parallel_ids"):
-        for num, parallel_id in enumerate(stack.parallel_ids):
-            stack.delete_schedule(parallel_id)
+        for _num, parallel_id in enumerate(stack.parallel_ids):
+            stack.remove_schedule(parallel_id)
 
     # Delete sequential ids
     if not stack.get_attr("sequential_ids"):
@@ -68,5 +68,5 @@ def run(stackargs):
     stack.wait_all()
 
     for sequential_id in stack.sequential_ids:
-        stack.delete_schedule(sequential_id)
+        stack.remove_schedule(sequential_id)
     return stack.get_results(None)
