@@ -55,13 +55,13 @@ def run(stackargs):
         resource["values"]["arguments"] = stack._arguments
 
     if stack.get_attr("_arguments") and stack.get_attr("evaluate"):
-        arguments = stack.eval_vars(stack._arguments,
-                                    strict=True)
+        arguments = stack.get_resolved_args(stack._arguments,
+                                            strict=True)
         for _key, _value in arguments.items():
             resource["values"]["arguments"][_key] = _value
 
     if resource:
-        stack.insert_vars_set(values=resource,
+        stack.record_vars_set(values=resource,
                               labels=stack._labels)
         description = f'added a variable set name {stack.vars_set_name}'
     else:
