@@ -46,7 +46,7 @@ def run(stackargs):
     for _id in _ids:
         inputargs = {
             "arguments": {"db_id": _id},
-            "human_description": "Delete resource {}".format(_id),
+            "human_description": f"Delete resource {_id}",
         }
         stack.delete_resource.insert(display=None, **inputargs)
 

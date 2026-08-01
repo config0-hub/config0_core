@@ -35,6 +35,8 @@ def run(stackargs):
         "mkey": stack.mkey
     }
 
-    stack.run_metadata.add(**inputargs)
+    stack.run_store.set("run_id", inputargs["run_id"])
+    stack.run_store.set("data", inputargs["data"])
+    stack.run_store.set("mkey", inputargs["mkey"])
 
     return stack.get_results()

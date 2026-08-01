@@ -107,38 +107,37 @@ def run(stackargs):
 
     # Execute shellout and check for errors
     iac_ci_raise_on_failure = os.environ.get("IAC_CI_RAISE_ON_FAILURE", "true").lower() in ("true", "1", "yes")
-    
+
     try:
         results = stack.iac_ci_s3_to_repo.run(**inputargs)
-        
+
         # Check if results indicate failure
-        if results:
-            if isinstance(results, dict):
-                status = results.get("status")
-                exitcode = results.get("exitcode")
-                failed_message = results.get("failed_message")
-                
-                if status is False or (exitcode is not None and exitcode != 0):
-                    error_msg = f"IAC CI setup failed for stateful_id=\"{stack.stateful_id}\", repo=\"{stack.iac_ci_repo}\", branch=\"{stack.iac_ci_branch}\""
-                    if exitcode is not None:
-                        error_msg += f", exitcode={exitcode}"
-                    if failed_message:
-                        error_msg += f". Error: {failed_message}"
-                    
-                    stack.logger.error(error_msg)
-                    
-                    if iac_ci_raise_on_failure:
-                        raise Exception(error_msg)
-                else:
-                    stack.logger.info(f"IAC CI setup succeeded for stateful_id=\"{stack.stateful_id}\", repo=\"{stack.iac_ci_repo}\", branch=\"{stack.iac_ci_branch}\"")
+        if results and isinstance(results, dict):
+            status = results.get("status")
+            exitcode = results.get("exitcode")
+            failed_message = results.get("failed_message")
+
+            if status is False or (exitcode is not None and exitcode != 0):
+                error_msg = f"IAC CI setup failed for stateful_id=\"{stack.stateful_id}\", repo=\"{stack.iac_ci_repo}\", branch=\"{stack.iac_ci_branch}\""
+                if exitcode is not None:
+                    error_msg += f", exitcode={exitcode}"
+                if failed_message:
+                    error_msg += f". Error: {failed_message}"
+
+                stack.logger.error(error_msg)
+
+                if iac_ci_raise_on_failure:
+                    raise Exception(error_msg)
+            else:
+                stack.logger.info(f"IAC CI setup succeeded for stateful_id=\"{stack.stateful_id}\", repo=\"{stack.iac_ci_repo}\", branch=\"{stack.iac_ci_branch}\"")
     except Exception as e:
         error_msg = f"IAC CI setup failed for stateful_id=\"{stack.stateful_id}\", repo=\"{stack.iac_ci_repo}\", branch=\"{stack.iac_ci_branch}\". Error: {str(e)}"
         stack.logger.error(error_msg)
-        
+
         if iac_ci_raise_on_failure:
-            raise Exception(error_msg)
+            raise Exception(error_msg) from e
         else:
-            stack.logger.warn(f"IAC_CI_RAISE_ON_FAILURE is false, continuing despite error")
+            stack.logger.warn("IAC_CI_RAISE_ON_FAILURE is false, continuing despite error")
 
     # update resource
     update_values = {

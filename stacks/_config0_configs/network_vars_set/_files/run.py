@@ -42,16 +42,16 @@ def run(stackargs):
     }
 
     if stack.get_attr("env_vars_hash"):
-        resource["values"]["env_vars"] = stack.b64_decode(stack.env_vars_hash)
+        resource["values"]["env_vars"] = stack.deserialize(stack.env_vars_hash, json=True)
 
     if stack.get_attr("labels_hash"):
         stack.set_variable("_labels",
-                           stack.b64_decode(stack.labels_hash))
+                           stack.deserialize(stack.labels_hash, json=True))
         resource["values"]["labels"] = stack._labels
 
     if stack.get_attr("arguments_hash"):
         stack.set_variable("_arguments",
-                           stack.b64_decode(stack.arguments_hash))
+                           stack.deserialize(stack.arguments_hash, json=True))
         resource["values"]["arguments"] = stack._arguments
 
     if stack.get_attr("_arguments") and stack.get_attr("evaluate"):

@@ -37,7 +37,7 @@ def run(stackargs):
     resource = stack.get_resource(match=match)
 
     if resource and len(resource) == 1:
-        stack.validate_resource(resource[0]["id"], **resource[0])
+        stack.add_resource_drift_check(resource[0]["id"], **resource[0])
     elif resource and len(resource) > 1:
         error_msg = f"More than resource found for {match}"
         stack.logger.error(error_msg)

@@ -86,4 +86,13 @@ def run(stackargs):
     stack.delete_schedules.insert(display=None,
                                   **inputargs)
 
+    stack.wait_all()
+
+    # Final order: ONE callback to the SaaS. After the resource-removal and
+    # schedule-removal subtrees settle, the SaaS deletes ALL traces of the
+    # project on its side (Convex project rows under every owner key) -
+    # mirroring .original's destroy callback where the SaaS swept its own
+    # tables. The chain is driven entirely by this stack's orders.
+    stack.add_project_delete_callback()
+
     return stack.get_results(None)

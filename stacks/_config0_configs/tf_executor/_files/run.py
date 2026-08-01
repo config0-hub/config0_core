@@ -338,7 +338,7 @@ class Config0Resource:
             "name": self.name,
             "resource_type": self.type,
             "ref_schedule_id": self.stack.schedule_id,
-            "publish_keys_hash": self.stack.b64_encode(self.output_keys)
+            "publish_keys_hash": self.stack.serialize(self.output_keys, json=False)
         }
 
         if self.stack.resource_id:
@@ -375,7 +375,7 @@ class TFConfigHelper:
     def _get_tf_configs(self):
         if self.stack.get_attr("cloud_tags_hash"):
             self.tf_vars["cloud_tags"] = {
-                "value": json.dumps(self.stack.b64_decode(self.stack.cloud_tags_hash)),
+                "value": json.dumps(self.stack.deserialize(self.stack.cloud_tags_hash, json=True)),
                 "type": "dict",
                 "key": "cloud_tags"
             }
@@ -443,16 +443,16 @@ class TFConfigHelper:
         self._add_cloudprovider()
 
         _settings = {
-            "tf_runtime_settings_hash": self.stack.b64_encode({
+            "tf_runtime_settings_hash": self.stack.serialize({
                 "env_vars": self.config0_resource.tfrun_exec.env_vars,
                 "tf_configs": self._get_tf_configs()  # terraform variables and other settings
-            }),  # runtime: e.g. Codebuild/Lambda
-            "resource_runtime_settings_hash": self.stack.b64_encode({
+            }, json=False),  # runtime: e.g. Codebuild/Lambda
+            "resource_runtime_settings_hash": self.stack.serialize({
                 "env_vars": self.config0_resource.env_vars,
                 "provider": self.config0_resource.provider,  # provider e.g. aws, config0, do
                 "type": self.config0_resource.type,  # resource_type e.g. server, rds, load balancer
                 "values": self.config0_resource.values
-            })   # when executing config0 resource
+            }, json=False)   # when executing config0 resource
         }
 
         if os.environ.get("DEBUG_STACK"):
@@ -463,7 +463,7 @@ class TFConfigHelper:
     def get_execgroup_inputargs(self):
         # add the main env var
         _settings = self._get_config0_resource_exec_settings()
-        self.config0_resource.env_vars["CONFIG0_RESOURCE_EXEC_SETTINGS_HASH"] = self.stack.b64_encode(_settings)
+        self.config0_resource.env_vars["CONFIG0_RESOURCE_EXEC_SETTINGS_HASH"] = self.stack.serialize(_settings, json=False)
 
         return self.config0_resource.get_inputargs()
 
@@ -563,18 +563,18 @@ def run(stackargs):
     # terraform variables
     if stack.get_attr("tf_vars_hash"):
         stack.set_variable("tf_vars",
-                           stack.b64_decode(stack.tf_vars_hash))
+                           stack.deserialize(stack.tf_vars_hash, json=True))
 
     # terraform executor runtime environment variables
     # e.g. Codebuild, Lambda, Docker Container
     if stack.get_attr("runtime_env_vars_hash"):
         stack.set_variable("runtime_env_vars",
-                           stack.b64_decode(stack.runtime_env_vars_hash))
+                           stack.deserialize(stack.runtime_env_vars_hash, json=True))
 
     # configures config0 resource db
     # e.g. values, env_vars, query keys, add_keys, exclude_keys, maps, etc.
     stack.set_variable("resource_configs",
-                       stack.b64_decode(stack.resource_configs_hash))
+                       stack.deserialize(stack.resource_configs_hash, json=True))
 
     tfconfig = TFConfigHelper(stack)
     inputargs = tfconfig.get_execgroup_inputargs()

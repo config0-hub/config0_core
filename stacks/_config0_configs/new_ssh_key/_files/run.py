@@ -39,6 +39,12 @@ def run(stackargs):
         msg = "key_name or name variable has to be set"
         raise Exception(msg)
 
+    # ── CONFIG0-REWRITE · EXPECTED-BROKEN · EB-0002 ──────────────────────
+    # create_ssh_key / delete_ssh_key are REMOVED from the worker — SSH key
+    # creation/deletion moves to an external system that manages keys on
+    # config0's behalf. Both calls below raise until that system replaces
+    # this stack. Ref: current/expected-broken-registry.md#eb-0002
+    # ─────────────────────────────────────────────────────────────────────
     # Delete key if clobber
     if stack.get_attr("clobber"):
         stack.delete_ssh_key(stack.key_name)

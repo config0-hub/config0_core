@@ -64,6 +64,6 @@ def run(stackargs):
         }
         stack.check_drift_resource.insert(**inputargs)
 
-    stack.wait_to_complete()
+    stack.add_wait(expire_ttl=1800)
 
     return stack.get_results()

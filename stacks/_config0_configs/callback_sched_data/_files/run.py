@@ -59,7 +59,7 @@ def run(stackargs):
     if stack.get_attr("bucket_key"):
         values["bucket_key"] = stack.bucket_key
 
-    if stack.get_attr("cluster_id"): 
+    if stack.get_attr("cluster_id"):
         values["cluster_id"] = stack.cluster_id
 
     # If the callback is confirm the destroying of a project/schedule ids
@@ -74,15 +74,15 @@ def run(stackargs):
     }
 
     if stack.get_attr("payload_hash"):
-        payload = stack.b64_decode(stack.payload_hash)
+        payload = stack.deserialize(stack.payload_hash, json=True)
     elif stack.get_attr("payload"):
         payload = stack.payload
     else:
         payload = None
 
     if stack.get_attr("bucket_key") and payload:
-        stack.add_dict_to_s3(payload,
-                             bucket_key=stack.bucket_key)
+        stack.stage_to_s3(payload,
+                          bucket_key=stack.bucket_key)
 
     stack.execute_restapi(default_values)
 

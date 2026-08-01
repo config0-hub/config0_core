@@ -21,28 +21,28 @@ def run(stackargs):
 
     stack = newStack(stackargs)
 
-    stack.parse.add_required(key="resource_type", 
+    stack.parse.add_required(key="resource_type",
                              default="null")
 
-    stack.parse.add_optional(key="name", 
+    stack.parse.add_optional(key="name",
                              default="null")
 
-    stack.parse.add_optional(key="ref_schedule_id", 
+    stack.parse.add_optional(key="ref_schedule_id",
                              default="null")
 
-    stack.parse.add_optional(key="labels_hash", 
+    stack.parse.add_optional(key="labels_hash",
                              default="null")
 
     # keys in the resource to publish in base64
-    stack.parse.add_optional(key="publish_keys_hash", 
+    stack.parse.add_optional(key="publish_keys_hash",
                              default="null")
 
     # map keys b64 (dict) is use to change the key name that shows up on the UI
-    stack.parse.add_optional(key="map_keys_hash", 
+    stack.parse.add_optional(key="map_keys_hash",
                              default="null")
 
     # prefix is prefix for each key
-    stack.parse.add_optional(key="prefix_key", 
+    stack.parse.add_optional(key="prefix_key",
                              default="null")
 
     # Initialize Variables in stack
@@ -57,9 +57,7 @@ def run(stackargs):
         match["schedule_id"] = stack.ref_schedule_id
 
     if stack.get_attr("labels_hash"):
-        for _key, value in stack.b64_decode(stack.labels_hash).items():
-            key = f"label-{_key}"
-            match[key] = value
+        match["labels"] = stack.deserialize(stack.labels_hash, json=True)
 
     match["must_be_one"] = True
     resource_info = list(stack.get_resource(**match))
@@ -75,8 +73,7 @@ def run(stackargs):
         raise Exception(f"resource not found for match {match}")
 
     if stack.get_attr("publish_keys_hash"):
-        resource = stack.keys_to_dict(stack.b64_decode(stack.publish_keys_hash),
-                                      {}, 
+        resource = stack.keys_to_dict(stack.deserialize(stack.publish_keys_hash, json=True),
                                       data)
     else:
         resource = data
@@ -88,20 +85,7 @@ def run(stackargs):
     copied_dict = copy.deepcopy(resource)
 
     if stack.get_attr("map_keys_hash"):
-        resource = stack.keys_to_dict(stack.b64_decode(stack.publish_keys_hash),
-                                      {}, 
-                                      data)
-    else:
-        resource = data
-
-    if not resource:
-        stack.logger.warn("resource to publish is empty")
-        return stack.get_results()
-
-    copied_dict = copy.deepcopy(resource)
-
-    if stack.get_attr("map_keys_hash"):
-        for _key, _map_key in stack.b64_decode(stack.map_keys_hash).items():
+        for _key, _map_key in stack.deserialize(stack.map_keys_hash, json=True).items():
             if _key not in resource:
                 continue
 

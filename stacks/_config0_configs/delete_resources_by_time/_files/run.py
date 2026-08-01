@@ -15,39 +15,22 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-# The minimal teardown-sufficient projection for a remove order: the row
-# identity ``_id`` (the key the CLI confirms removal on after engine
-# success), identity (resource_type/provider/name), the STATE POINTER that
-# locates the .tfstate to destroy (stateful_id + remote_stateful_bucket),
-# and the execution driver (execgroup — mod_execgroup is the write-back's
-# recorded name for it).
-_TEARDOWN_KEYS = (
-    "_id",
-    "resource_type",
-    "provider",
-    "name",
-    "stateful_id",
-    "remote_stateful_bucket",
-    "execgroup",
-    "timeout",
-)
+# A recorded infrastructure teardown transports ONLY the row id. The CLI reads
+# the immutable execution asset, merged mod_params/destroy_params, and tfstate
+# pointer from that QHost row. Passing an asset here would let caller state drift
+# away from the exact version that created the resource.
+_TEARDOWN_KEYS = ("_id",)
 
 
 def _teardown_projection(resource):
-    """Project one recorded resource to the minimal set a remove order needs.
-
-    Passing the whole record is not teardown-sufficient by itself: the
-    consumer routes on a stack FQN or an execgroup reference plus the state
-    pointer, so the projection carries exactly those (the write-back records
-    the execgroup as mod_execgroup; map it onto the execgroup driver key).
-    """
+    """Project one recorded resource to its id-only immutable destroy request."""
     projected = {
         key: resource[key]
         for key in _TEARDOWN_KEYS
         if resource.get(key) is not None
     }
-    if "execgroup" not in projected and resource.get("mod_execgroup"):
-        projected["execgroup"] = resource["mod_execgroup"]
+    if not projected.get("_id"):
+        raise ValueError("state-backed resource teardown requires the recorded _id")
     return projected
 
 
@@ -80,19 +63,41 @@ def _get_keep_resources(stack):
     return _resource_ids
 
 
-def _get_delete_resources(stack, keep_resource_ids=None):
-    """Gather engine-teardown candidates per target schedule id.
+_STATE_POINTER_KEYS = ("stateful_id",
+                       "remote_stateful_location",
+                       "remote_stateful_bucket")
 
-    Only records carrying a real state pointer (stateful_id) are teardown
-    candidates — record-only rows (schedule_vars, job_vars, selectors,
-    labels) have no infrastructure behind them and are removed by the final
-    cleanup sweep, never by the engine. Candidates are deduplicated by _id,
-    filtered by the keep exclusion, and returned in REVERSE creation order
-    (later-created first) keyed on the record's created_at — the
-    dependency-safe removal order where resources depend on one another.
+
+def _has_state_pointer(resource):
+    """A row carrying any state pointer is real infrastructure."""
+    return any(resource.get(key) not in (None, "", "null", "None")
+               for key in _STATE_POINTER_KEYS)
+
+
+def _get_delete_resources(stack, keep_resource_ids=None):
+    """Gather EVERY matched row per target schedule id - no row left behind.
+
+    Mirrors ``.original``'s uniform remove_resource: every matched row of
+    every resource_type is torn down by the stack's own run, per schedule
+    id. The split is only HOW each row dies:
+
+    - a row carrying a state pointer is real infrastructure → an
+      execution-backed ``remove_resource`` teardown order;
+    - a record-only row (schedule_vars, job_vars, selectors, labels,
+      reference, vars_set) has nothing to run → the inline
+      ``unrecord_resource`` QHost row delete.
+
+    Teardown candidates are deduplicated by _id, filtered by the keep
+    exclusion, and returned in REVERSE creation order (later-created first)
+    keyed on the record's created_at - the dependency-safe removal order
+    where resources depend on one another.
+
+    Returns ``(teardown_requests, record_only_ids)``.
     """
     added_ids = []
     candidates = []
+    record_only_ids = []
+    matched_row_count = 0
 
     for ref_schedule_id in stack.to_list(stack.ref_schedule_ids):
         _resources = stack.get_resource(ref_schedule_id=ref_schedule_id)
@@ -100,23 +105,27 @@ def _get_delete_resources(stack, keep_resource_ids=None):
         if not _resources:
             continue
 
+        matched_row_count += len(_resources)
         for _resource in _resources:
             _id = _resource.get("_id")
             if _id in added_ids:
                 continue
             if keep_resource_ids and _id in keep_resource_ids:
                 continue
-            if not _resource.get("stateful_id"):
+            if not _has_state_pointer(_resource):
                 stack.logger.debug(
-                    f"skipping record-only row {_id} (no stateful_id)"
+                    f"record-only row {_id} "
+                    f"(resource_type={_resource.get('resource_type')}) - "
+                    "inline unrecord"
                 )
+                added_ids.append(_id)
+                record_only_ids.append(_id)
                 continue
             if _resource.get("removal_confirmed_at"):
                 # The resources table is a durable PROGRESS LEDGER: this
                 # row's engine destroy already succeeded (the CLI persisted
                 # the confirmation) — a retry must never repeat a confirmed
-                # removal. The row itself stays as evidence until the final
-                # one-transaction project sweep.
+                # removal.
                 stack.logger.debug(
                     f"skipping removal-confirmed row {_id} "
                     f"(confirmed at {_resource['removal_confirmed_at']})"
@@ -124,6 +133,18 @@ def _get_delete_resources(stack, keep_resource_ids=None):
                 continue
             added_ids.append(_id)
             candidates.append(_resource)
+
+    # A repeated project destroy legitimately finds no rows after the first
+    # sweep. Keep that retry idempotent, but make a broken project link visible.
+    if matched_row_count == 0:
+        warning = (
+            "WARNING: zero resources matched the project's schedule ids "
+            f"{stack.to_list(stack.ref_schedule_ids)!r}; nothing to destroy. "
+            "If this project should still have resources, the resource-to-project "
+            "link is broken."
+        )
+        stack.logger.warning(warning)
+        stack.output_to_ui({"warning": warning})
 
     candidates = sorted(
         candidates,
@@ -136,7 +157,8 @@ def _get_delete_resources(stack, keep_resource_ids=None):
         f"{[r.get('_id') for r in candidates]}"
     )
 
-    return [_teardown_projection(resource) for resource in candidates]
+    teardown_requests = [_teardown_projection(resource) for resource in candidates]
+    return teardown_requests, record_only_ids
 
 
 def run(stackargs):
@@ -157,8 +179,18 @@ def run(stackargs):
 
     keep_resource_ids = _get_keep_resources(stack)
 
-    candidates = _get_delete_resources(stack,
-                                       keep_resource_ids=keep_resource_ids)
+    candidates, record_only_ids = _get_delete_resources(stack,
+                                                        keep_resource_ids=keep_resource_ids)
+
+    # Record-only rows (labels / selectors / schedule_vars / job_vars /
+    # reference / vars_set) have no infrastructure behind them: nothing runs,
+    # so their teardown is the inline QHost row delete - done here by the
+    # stack itself, per schedule id, exactly like .original's uniform
+    # remove_resource covered every matched row. NO row is left for a later
+    # SaaS-side sweep.
+    for record_only_id in record_only_ids:
+        stack.logger.debug(f"unrecording record-only row {record_only_id}")
+        stack.unrecord_resource(_id=record_only_id)
 
     # parallel overide set True: remove everything concurrently (an explicit
     # caller opt-in for independent resources — no ordering guarantee).

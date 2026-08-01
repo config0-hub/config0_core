@@ -69,12 +69,18 @@ def run(stackargs):
         stack.set_variable("ipaddress", _get_ipaddress(stack))
         stack.set_variable("private_key", _get_private_key(stack))
     elif stack.private_key_hash:
-        stack.set_variable("private_key", stack.b64_decode(stack.private_key_hash))
+        stack.set_variable("private_key", stack.deserialize(stack.private_key_hash, json=False))
 
     if not stack.ipaddress or not stack.private_key:
         stack.logger.error("we need to have/determine ipaddress and private_key to fetch host contents")
         return stack.get_results()
 
+    # ── CONFIG0-REWRITE · EXPECTED-BROKEN · EB-0001 ──────────────────────
+    # host_fetch_contents is REPLACED → SSM: it reads a remote file over SSH
+    # and exposes the contents as a pipeline var. The onboarding SSM Step
+    # Function runs a command that returns the file via task token.
+    # Raises until re-pointed. Ref: current/expected-broken-registry.md#eb-0001
+    # ─────────────────────────────────────────────────────────────────────
     contents = stack.host_fetch_contents(remote=stack.remote_file,
                                          user=stack.host_username,
                                          ipaddress=stack.ipaddress,

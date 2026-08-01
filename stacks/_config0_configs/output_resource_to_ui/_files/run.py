@@ -57,7 +57,7 @@ def run(stackargs):
     stack.init_variables()
 
     if stack.get_attr("match_hash"):
-        match = stack.b64_decode(stack.match_hash)
+        match = stack.deserialize(stack.match_hash, json=True)
     else:
         match = {"resource_type": stack.resource_type}
 
@@ -68,9 +68,7 @@ def run(stackargs):
             match["schedule_id"] = stack.ref_schedule_id
 
     if stack.get_attr("labels_hash"):
-        for _key, value in stack.b64_decode(stack.labels_hash).items():
-            key = f"label-{_key}"
-            match[key] = value
+        match["labels"] = stack.deserialize(stack.labels_hash, json=True)
 
     resource_info = list(stack.get_resource(match=match,
                                            must_be_one=True))
@@ -88,7 +86,7 @@ def run(stackargs):
     resource = data
 
     if stack.get_attr("publish_keys_hash"):
-        keys2pass = stack.b64_decode(stack.publish_keys_hash)
+        keys2pass = stack.deserialize(stack.publish_keys_hash, json=True)
         resource = {}
 
         for _key in keys2pass:
@@ -115,7 +113,7 @@ def run(stackargs):
         return stack.get_results()
 
     if stack.get_attr("map_keys_hash"):
-        for _key, _map_key in stack.b64_decode(stack.map_keys_hash).items():
+        for _key, _map_key in stack.deserialize(stack.map_keys_hash, json=True).items():
             if _key not in resource:
                 continue
 
