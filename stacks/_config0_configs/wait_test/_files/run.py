@@ -59,8 +59,6 @@ OK = "echo ok"
 BAD = "exit 1"
 SLOW = "sleep 20"
 
-CHILD = "config0-hub:::config0_core::wait_test_child"
-
 SCENARIOS = ["a", "b", "c", "d1", "d2", "e", "g", "h"]
 
 
@@ -91,7 +89,7 @@ def run(stackargs):
     stack = newStack(stackargs)
 
     stack.parse.add_required(key="scenario", types="str", choices=SCENARIOS)
-    stack.add_substack(CHILD, "wait_child")
+    stack.add_substack("config0-hub:::config0_core::wait_test_child", "wait_child")
 
     stack.init_variables()
     stack.init_substacks()
