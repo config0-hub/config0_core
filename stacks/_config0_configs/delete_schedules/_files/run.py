@@ -61,11 +61,9 @@ def run(stackargs):
     if not stack.get_attr("sequential_ids"):
         return stack.get_results(stack.destroy_instance)
 
-    # Set unset_parallel
+    # unset_parallel() emits the check-wait::api row when parallel removals
+    # were queued; with none queued there is nothing to wait for.
     stack.unset_parallel()
-
-    # Wait until all actions complete
-    stack.wait_all()
 
     for sequential_id in stack.sequential_ids:
         stack.remove_schedule(sequential_id)

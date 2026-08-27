@@ -74,6 +74,17 @@ def _has_state_pointer(resource):
                for key in _STATE_POINTER_KEYS)
 
 
+def _checkin_sort_key(resource):
+    """The original's checkin sort semantics (``_main/run.py:64-68``): the
+    string form of the integer checkin, with a missing/unparseable checkin
+    coerced to 1000000000 so it sorts LAST under the descending sort."""
+    try:
+        checkin = int(resource["checkin"])
+    except (KeyError, TypeError, ValueError):
+        checkin = 1000000000
+    return str(checkin)
+
+
 def _get_delete_resources(stack, keep_resource_ids=None):
     """Gather EVERY matched row per target schedule id - no row left behind.
 
@@ -87,15 +98,21 @@ def _get_delete_resources(stack, keep_resource_ids=None):
       reference, vars_set) has nothing to run → the inline
       ``unrecord_resource`` QHost row delete.
 
-    Teardown candidates are deduplicated by _id, filtered by the keep
-    exclusion, and returned in REVERSE creation order (later-created first)
-    keyed on the record's created_at - the dependency-safe removal order
-    where resources depend on one another.
+    Teardown candidates are deduplicated by _id and filtered by the keep
+    exclusion, then split into the original's two tiers
+    (``_main/run.py:37-89``):
 
-    Returns ``(teardown_requests, record_only_ids)``.
+    - the PARALLEL tier: rows flagged ``query_only`` or ``parent`` —
+      independent resources torn down concurrently;
+    - the SEQUENTIAL tier: everything else, in reverse ``checkin`` order
+      (latest checkin first, missing checkin last) — the dependency-safe
+      removal order where resources depend on one another.
+
+    Returns ``(parallel_requests, sequential_requests, record_only_ids)``.
     """
     added_ids = []
-    candidates = []
+    parallel_candidates = []
+    sequential_candidates = []
     record_only_ids = []
     matched_row_count = 0
 
@@ -132,7 +149,10 @@ def _get_delete_resources(stack, keep_resource_ids=None):
                 )
                 continue
             added_ids.append(_id)
-            candidates.append(_resource)
+            if _resource.get("query_only") or _resource.get("parent"):
+                parallel_candidates.append(_resource)
+            else:
+                sequential_candidates.append(_resource)
 
     # A repeated project destroy legitimately finds no rows after the first
     # sweep. Keep that retry idempotent, but make a broken project link visible.
@@ -146,19 +166,24 @@ def _get_delete_resources(stack, keep_resource_ids=None):
         stack.logger.warning(warning)
         stack.output_to_ui({"warning": warning})
 
-    candidates = sorted(
-        candidates,
-        key=lambda r: str(r.get("created_at") or ""),
+    sequential_candidates = sorted(
+        sequential_candidates,
+        key=_checkin_sort_key,
         reverse=True,
     )
 
     stack.logger.debug(
-        f"teardown candidate ids (reverse creation order) "
-        f"{[r.get('_id') for r in candidates]}"
+        f"parallel teardown candidate ids "
+        f"{[r.get('_id') for r in parallel_candidates]}"
+    )
+    stack.logger.debug(
+        f"sequential teardown candidate ids (reverse checkin order) "
+        f"{[r.get('_id') for r in sequential_candidates]}"
     )
 
-    teardown_requests = [_teardown_projection(resource) for resource in candidates]
-    return teardown_requests, record_only_ids
+    parallel_requests = [_teardown_projection(r) for r in parallel_candidates]
+    sequential_requests = [_teardown_projection(r) for r in sequential_candidates]
+    return parallel_requests, sequential_requests, record_only_ids
 
 
 def run(stackargs):
@@ -179,8 +204,9 @@ def run(stackargs):
 
     keep_resource_ids = _get_keep_resources(stack)
 
-    candidates, record_only_ids = _get_delete_resources(stack,
-                                                        keep_resource_ids=keep_resource_ids)
+    parallel_requests, sequential_requests, record_only_ids = _get_delete_resources(
+        stack,
+        keep_resource_ids=keep_resource_ids)
 
     # Record-only rows (labels / selectors / schedule_vars / job_vars /
     # reference / vars_set) have no infrastructure behind them: nothing runs,
@@ -194,18 +220,31 @@ def run(stackargs):
 
     # parallel overide set True: remove everything concurrently (an explicit
     # caller opt-in for independent resources — no ordering guarantee).
-    if stack.get_attr("parallel_overide") and candidates:
+    # Mirrors the original (_main/run.py:143-151): the combined tier list,
+    # all removed inside one parallel window.
+    if stack.get_attr("parallel_overide") and (parallel_requests or sequential_requests):
         stack.logger.debug("Parallel overide set True")
         stack.set_parallel()
-        for resource in candidates:
+        for resource in parallel_requests + sequential_requests:
             stack.logger.debug(f"removing resource {resource}")
             stack.remove_resource(**resource)
         return stack.get_results(None)
 
-    # Default: the sequential reverse-creation chain — each remove order
-    # depends on the previous one (queue_ids edge), so resources that depend
-    # on one another are removed dependency-safe, later-created first.
-    for resource in candidates:
+    # Two tiers, as the original (_main/run.py:153-167): the independent
+    # (query_only/parent) tier torn down concurrently under set_parallel(),
+    # then unset_parallel() emits the check-wait::api wait row so the
+    # sequential tier waits on the whole batch.
+    if parallel_requests:
+        stack.set_parallel()
+        for resource in parallel_requests:
+            stack.logger.debug(f"removing resource {resource}")
+            stack.remove_resource(**resource)
+        stack.unset_parallel()
+
+    # The sequential reverse-checkin chain — each remove order depends on
+    # the previous one (queue_ids edge), so resources that depend on one
+    # another are removed dependency-safe, latest checkin first.
+    for resource in sequential_requests:
         stack.logger.debug(f"removing resource {resource}")
         stack.remove_resource(**resource)
 

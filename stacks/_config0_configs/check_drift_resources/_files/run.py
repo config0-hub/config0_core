@@ -64,6 +64,7 @@ def run(stackargs):
         }
         stack.check_drift_resource.insert(**inputargs)
 
-    stack.add_wait(expire_ttl=1800)
+    # Drift checks may fail; the wait still holds until every check is terminal.
+    stack.wait_all(must_complete=True)
 
     return stack.get_results()
