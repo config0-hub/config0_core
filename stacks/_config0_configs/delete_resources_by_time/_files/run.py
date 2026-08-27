@@ -15,6 +15,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
+from datetime import datetime
+
 # A recorded infrastructure teardown transports ONLY the row id. The CLI reads
 # the immutable execution asset, merged mod_params/destroy_params, and tfstate
 # pointer from that QHost row. Passing an asset here would let caller state drift
@@ -74,15 +76,9 @@ def _has_state_pointer(resource):
                for key in _STATE_POINTER_KEYS)
 
 
-def _checkin_sort_key(resource):
-    """The original's checkin sort semantics (``_main/run.py:64-68``): the
-    string form of the integer checkin, with a missing/unparseable checkin
-    coerced to 1000000000 so it sorts LAST under the descending sort."""
-    try:
-        checkin = int(resource["checkin"])
-    except (KeyError, TypeError, ValueError):
-        checkin = 1000000000
-    return str(checkin)
+def _created_at_sort_key(resource):
+    """Parse the rewrite resource row's authoritative creation timestamp."""
+    return datetime.fromisoformat(resource["created_at"])
 
 
 def _get_delete_resources(stack, keep_resource_ids=None):
@@ -104,9 +100,9 @@ def _get_delete_resources(stack, keep_resource_ids=None):
 
     - the PARALLEL tier: rows flagged ``query_only`` or ``parent`` —
       independent resources torn down concurrently;
-    - the SEQUENTIAL tier: everything else, in reverse ``checkin`` order
-      (latest checkin first, missing checkin last) — the dependency-safe
-      removal order where resources depend on one another.
+    - the SEQUENTIAL tier: everything else, in reverse ``created_at`` order
+      (newest first). This is the dependency-safe removal order where
+      resources depend on one another. A missing or invalid timestamp raises.
 
     Returns ``(parallel_requests, sequential_requests, record_only_ids)``.
     """
@@ -168,7 +164,7 @@ def _get_delete_resources(stack, keep_resource_ids=None):
 
     sequential_candidates = sorted(
         sequential_candidates,
-        key=_checkin_sort_key,
+        key=_created_at_sort_key,
         reverse=True,
     )
 
@@ -177,7 +173,7 @@ def _get_delete_resources(stack, keep_resource_ids=None):
         f"{[r.get('_id') for r in parallel_candidates]}"
     )
     stack.logger.debug(
-        f"sequential teardown candidate ids (reverse checkin order) "
+        f"sequential teardown candidate ids (reverse created_at order) "
         f"{[r.get('_id') for r in sequential_candidates]}"
     )
 
@@ -241,9 +237,9 @@ def run(stackargs):
             stack.remove_resource(**resource)
         stack.unset_parallel()
 
-    # The sequential reverse-checkin chain — each remove order depends on
+    # The sequential reverse-created_at chain. Each remove order depends on
     # the previous one (queue_ids edge), so resources that depend on one
-    # another are removed dependency-safe, latest checkin first.
+    # another are removed dependency-safe, newest-created first.
     for resource in sequential_requests:
         stack.logger.debug(f"removing resource {resource}")
         stack.remove_resource(**resource)
