@@ -59,9 +59,6 @@ OK = "echo ok"
 BAD = "exit 1"
 SLOW = "sleep 20"
 
-SCENARIOS = ["a", "b", "c", "d1", "d2", "e", "g", "h"]
-
-
 def _ok(stack):
     return stack.add_external_cmd(cmd=OK, role="external/cli/execute")
 
@@ -88,7 +85,7 @@ def _child(stack, mode):
 def run(stackargs):
     stack = newStack(stackargs)
 
-    stack.parse.add_required(key="scenario", types="str", choices=SCENARIOS)
+    stack.parse.add_required(key="scenario", types="str", choices=["a", "b", "c", "d1", "d2", "e", "g", "h"])
     stack.add_substack("config0-hub:::config0_core::wait_test_child", "wait_child")
 
     stack.init_variables()
