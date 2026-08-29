@@ -6,21 +6,22 @@ orders only, no cloud resources.
 mode=slow (default):   set_parallel(); slow; wait_all(); ok
 mode=fast:             set_parallel(); ok; ok; ok; wait_all(); ok
 
-Expected orders, E = this stack's exec order (the parent's substack order):
+Expected orders, E = this stack's exec order (the parent's substack order),
+A = the displayed checkpoint/parallel anchor:
 
   mode=slow
-  E.005  external/cli/execute  sleep 20   deps=[anchor]
-  E.010  check/wait/instance   ** WAIT    prior_all, deps=[anchor]     base_wt=E
-  E.015  external/cli/execute  echo ok    deps=[WAIT]
+  E.005  A                                      deps=[E]
+  E.010  external/cli/execute  sleep 20         deps=[A]
+  E.015  check/wait/instance   ** WAIT          prior_all, deps=[A]  base_wt=E
+  E.020  external/cli/execute  echo ok           deps=[WAIT]
 
   mode=fast
-  E.005  external/cli/execute  echo ok    deps=[anchor]
-  E.010  external/cli/execute  echo ok    deps=[anchor]
-  E.015  external/cli/execute  echo ok    deps=[anchor]
-  E.020  check/wait/instance   ** WAIT    prior_all, deps=[anchor]     base_wt=E
-  E.025  external/cli/execute  echo ok    deps=[WAIT]
-
-anchor = the parent exec order's queue_id (first emission inside the window).
+  E.005  A                                      deps=[E]
+  E.010  external/cli/execute  echo ok           deps=[A]
+  E.015  external/cli/execute  echo ok           deps=[A]
+  E.020  external/cli/execute  echo ok           deps=[A]
+  E.025  check/wait/instance   ** WAIT          prior_all, deps=[A]  base_wt=E
+  E.030  external/cli/execute  echo ok           deps=[WAIT]
 """
 
 SLOW = "sleep 20"
