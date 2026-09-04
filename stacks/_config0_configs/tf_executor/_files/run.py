@@ -505,6 +505,19 @@ def run(stackargs):
                              default="null",
                              types="str")
 
+    # ref 4532643623642 — the tf_exec_env channel. TFConstructor
+    # (config0_publisher terraform.py _get_runtime_env_vars) hands this stack
+    # its serialized runtime env vars under runtime_env_vars_hash, and the
+    # per-order gitops identity (GITOPS_ACCOUNT_ALIAS/ID, GITOPS_REGION,
+    # GITOPS_STACK, GITOPS_EXECGROUP — decision 26) rides ONLY this channel.
+    # It must be DECLARED: get_attr serves declared keys only, so the
+    # undeclared read below returned None and the whole hash was silently
+    # dropped before TF_RUNTIME_SETTINGS.env_vars was sealed (live: vpc run
+    # williaumwu_ymdw2c failed in gitops_state_key with all five missing).
+    stack.parse.add_optional(key="runtime_env_vars_hash",
+                             default="null",
+                             types="str")
+
     stack.parse.add_optional(key="timeout",
                              default=1650,
                              types="int")
