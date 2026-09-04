@@ -31,9 +31,6 @@ def run(stackargs):
     stack.parse.add_required(key="cluster_id",
                              default="null")
 
-    stack.parse.add_required(key="project_id",
-                             default="null")
-
     stack.parse.add_required(key="sched_destroy",
                              default="null")
 
@@ -63,7 +60,9 @@ def run(stackargs):
         values["cluster_id"] = stack.cluster_id
 
     # If the callback is confirm the destroying of a project/schedule ids
-    if stack.get_attr("sched_destroy") and stack.get_attr("project_id"):
+    # stack.project_id is the run's own project (a Stack built-in off
+    # CONFIG0_PROJECT_ID); it is never declared as an argument.
+    if stack.get_attr("sched_destroy"):
         values["sched_destroy"] = stack.project_id
 
     default_values = {
