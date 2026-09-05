@@ -84,15 +84,19 @@ def _created_at_sort_key(resource):
 def _get_delete_resources(stack, keep_resource_ids=None):
     """Gather EVERY matched row per target schedule id - no row left behind.
 
-    Mirrors ``.original``'s uniform remove_resource: every matched row of
-    every resource_type is torn down by the stack's own run, per schedule
-    id. The split is only HOW each row dies:
+    Every matched row of every resource_type per schedule id is classified:
 
     - a row carrying a state pointer is real infrastructure → an
       execution-backed ``remove_resource`` teardown order;
     - a record-only row (schedule_vars, job_vars, selectors, labels,
-      reference, vars_set) has nothing to run → the inline
-      ``unrecord_resource`` QHost row delete.
+      reference, vars_set) has nothing to run and is NOT touched here. It is
+      the destroy's own argument base and retry evidence (the addon destroy
+      plan reads the install's ``schedule_vars`` row; a project destroy
+      re-reads its rows), so it must outlive a FAILED destroy. The SaaS
+      ``run_complete`` destroy gate deletes every project row in one atomic
+      by-project sweep, and only once the destroy run COMPLETED (defect 45:
+      deleting them at order-emit time consumed the base before the first
+      teardown order ran, so a failed destroy could never be retried).
 
     Teardown candidates are deduplicated by _id and filtered by the keep
     exclusion, then split into the original's two tiers
@@ -104,12 +108,11 @@ def _get_delete_resources(stack, keep_resource_ids=None):
       (newest first). This is the dependency-safe removal order where
       resources depend on one another. A missing or invalid timestamp raises.
 
-    Returns ``(parallel_requests, sequential_requests, record_only_ids)``.
+    Returns ``(parallel_requests, sequential_requests)``.
     """
     added_ids = []
     parallel_candidates = []
     sequential_candidates = []
-    record_only_ids = []
     matched_row_count = 0
 
     for ref_schedule_id in stack.to_list(stack.ref_schedule_ids):
@@ -129,10 +132,9 @@ def _get_delete_resources(stack, keep_resource_ids=None):
                 stack.logger.debug(
                     f"record-only row {_id} "
                     f"(resource_type={_resource.get('resource_type')}) - "
-                    "inline unrecord"
+                    "kept for the SaaS run_complete sweep"
                 )
                 added_ids.append(_id)
-                record_only_ids.append(_id)
                 continue
             if _resource.get("removal_confirmed_at"):
                 # The resources table is a durable PROGRESS LEDGER: this
@@ -179,7 +181,7 @@ def _get_delete_resources(stack, keep_resource_ids=None):
 
     parallel_requests = [_teardown_projection(r) for r in parallel_candidates]
     sequential_requests = [_teardown_projection(r) for r in sequential_candidates]
-    return parallel_requests, sequential_requests, record_only_ids
+    return parallel_requests, sequential_requests
 
 
 def run(stackargs):
@@ -200,19 +202,9 @@ def run(stackargs):
 
     keep_resource_ids = _get_keep_resources(stack)
 
-    parallel_requests, sequential_requests, record_only_ids = _get_delete_resources(
+    parallel_requests, sequential_requests = _get_delete_resources(
         stack,
         keep_resource_ids=keep_resource_ids)
-
-    # Record-only rows (labels / selectors / schedule_vars / job_vars /
-    # reference / vars_set) have no infrastructure behind them: nothing runs,
-    # so their teardown is the inline QHost row delete - done here by the
-    # stack itself, per schedule id, exactly like .original's uniform
-    # remove_resource covered every matched row. NO row is left for a later
-    # SaaS-side sweep.
-    for record_only_id in record_only_ids:
-        stack.logger.debug(f"unrecording record-only row {record_only_id}")
-        stack.unrecord_resource(_id=record_only_id)
 
     # parallel overide set True: remove everything concurrently (an explicit
     # caller opt-in for independent resources — no ordering guarantee).
