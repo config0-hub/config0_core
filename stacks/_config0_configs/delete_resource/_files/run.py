@@ -103,7 +103,9 @@ def run(stackargs):
         stack.logger.error(error_msg)
         raise Exception(error_msg)
 
-    _dinputargs = stack.get_resource(**_destroy_match)
+    # Stored row only: a destroy needs the frozen state pointer, never a
+    # read-time overlay (which would abort on an unreachable artifact).
+    _dinputargs = stack.get_resource(**_destroy_match, overlay_tfstate=False)
 
     if _dinputargs and len(_dinputargs) == 1:
         _dispatch_delete(stack, _dinputargs[0])

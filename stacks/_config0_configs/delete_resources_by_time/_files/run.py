@@ -54,7 +54,7 @@ def _get_keep_resources(stack):
             match = dict(_keep_entry)
             match["ref_schedule_id"] = ref_schedule_id
             stack.logger.debug(f"searching for keep resource {match}")
-            resources = stack.get_resource(**match)
+            resources = stack.get_resource(**match, overlay_tfstate=False)
             if not resources:
                 continue
             for resource in resources:
@@ -115,8 +115,13 @@ def _get_delete_resources(stack, keep_resource_ids=None):
     sequential_candidates = []
     matched_row_count = 0
 
+    # A destroy enumerates the STORED rows: the teardown order carries only the
+    # _id and the CLI reads the frozen state pointer off the row. Never overlay
+    # here - a read-time overlay aborts the whole list on any row whose
+    # artifacts it cannot reach, and then nothing can be torn down.
     for ref_schedule_id in stack.to_list(stack.ref_schedule_ids):
-        _resources = stack.get_resource(ref_schedule_id=ref_schedule_id)
+        _resources = stack.get_resource(ref_schedule_id=ref_schedule_id,
+                                        overlay_tfstate=False)
 
         if not _resources:
             continue
