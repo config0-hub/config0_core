@@ -89,14 +89,15 @@ def _get_delete_resources(stack, keep_resource_ids=None):
     - a row carrying a state pointer is real infrastructure → an
       execution-backed ``remove_resource`` teardown order;
     - a record-only row (schedule_vars, job_vars, selectors, labels,
-      reference, vars_set) has nothing to run and is NOT touched here. It is
-      the destroy's own argument base and retry evidence (the addon destroy
-      plan reads the install's ``schedule_vars`` row; a project destroy
-      re-reads its rows), so it must outlive a FAILED destroy. The SaaS
-      ``run_complete`` destroy gate deletes every project row in one atomic
-      by-project sweep, and only once the destroy run COMPLETED (defect 45:
-      deleting them at order-emit time consumed the base before the first
-      teardown order ran, so a failed destroy could never be retried).
+      reference, vars_set) has nothing to run. It is the destroy's own
+      argument base and retry evidence (the addon destroy plan reads the
+      install's ``schedule_vars`` row; a project destroy re-reads its rows),
+      so it must outlive a FAILED destroy. It is collected here and unrecorded
+      LAST, after every teardown order has settled (defect 45: deleting them
+      at order-emit time consumed the base before the first teardown order
+      ran, so a failed destroy could never be retried). The SaaS
+      ``run_complete`` by-project sweep remains the primary backstop, gated on
+      a COMPLETED destroy; the stack's trailing unrecord is the second safety.
 
     Teardown candidates are deduplicated by _id and filtered by the keep
     exclusion, then split into the original's two tiers
@@ -108,11 +109,14 @@ def _get_delete_resources(stack, keep_resource_ids=None):
       (newest first). This is the dependency-safe removal order where
       resources depend on one another. A missing or invalid timestamp raises.
 
-    Returns ``(parallel_requests, sequential_requests)``.
+    Returns ``(parallel_requests, sequential_requests, record_only_requests)``.
+    The record-only requests are id-only projections, sorted by ``_id`` for a
+    deterministic trailing unrecord step.
     """
     added_ids = []
     parallel_candidates = []
     sequential_candidates = []
+    record_only_candidates = []
     matched_row_count = 0
 
     # A destroy enumerates the STORED rows: the teardown order carries only the
@@ -137,9 +141,10 @@ def _get_delete_resources(stack, keep_resource_ids=None):
                 stack.logger.debug(
                     f"record-only row {_id} "
                     f"(resource_type={_resource.get('resource_type')}) - "
-                    "kept for the SaaS run_complete sweep"
+                    "unrecorded LAST, after every teardown order settles"
                 )
                 added_ids.append(_id)
+                record_only_candidates.append(_resource)
                 continue
             if _resource.get("removal_confirmed_at"):
                 # The resources table is a durable PROGRESS LEDGER: this
@@ -175,6 +180,14 @@ def _get_delete_resources(stack, keep_resource_ids=None):
         reverse=True,
     )
 
+    # The record-only rows are independent row deletes; sort by _id only so the
+    # trailing unrecord step is deterministic without requiring a created_at on
+    # a non-infrastructure row.
+    record_only_candidates = sorted(
+        record_only_candidates,
+        key=lambda r: r["_id"],
+    )
+
     stack.logger.debug(
         f"parallel teardown candidate ids "
         f"{[r.get('_id') for r in parallel_candidates]}"
@@ -183,10 +196,62 @@ def _get_delete_resources(stack, keep_resource_ids=None):
         f"sequential teardown candidate ids (reverse created_at order) "
         f"{[r.get('_id') for r in sequential_candidates]}"
     )
+    stack.logger.debug(
+        f"record-only candidate ids (unrecorded last) "
+        f"{[r.get('_id') for r in record_only_candidates]}"
+    )
 
     parallel_requests = [_teardown_projection(r) for r in parallel_candidates]
     sequential_requests = [_teardown_projection(r) for r in sequential_candidates]
-    return parallel_requests, sequential_requests
+    record_only_requests = [_teardown_projection(r) for r in record_only_candidates]
+    return parallel_requests, sequential_requests, record_only_requests
+
+
+def _unrecord_record_only_rows_last(stack, record_only_requests):
+    """Emit the trailing unrecord STEP - delete the record-only rows LAST.
+
+    The record-only rows are the destroy's argument base and retry evidence
+    (defect 45), so their delete must run ONLY after every resource teardown
+    order has settled, and NOT at all if one fails. An inline
+    ``unrecord_resource`` runs during ``run.py`` evaluation - before any
+    teardown order executes - so the delete is emitted as ORDERS instead:
+
+    - ``wait_all(must_complete=True)`` emits one ``check-wait::api`` barrier
+      whose ``prior_all`` scope is this stack's exec order, covering every
+      teardown order in both tiers. A resource teardown carries the default
+      ``must_succeed=True``; when one settles failed the job fate holds every
+      order after the barrier, so no unrecord runs and the rows survive for
+      the retry. ``must_complete=True`` also drains: all teardowns attempt
+      before the job fails, maximizing removal per pass.
+    - each row delete is a ``resource/remove/record`` order carrying
+      ``{_id, destroy: False}``. The worker routes ``resource/remove`` to the
+      CLI resource-remove handler, whose ``destroy=False`` branch deletes the
+      matched record-only row (no engine teardown). ``remove_resource`` cannot
+      emit this: its ``_id`` branch hardcodes ``destroy=True``, and a
+      ``destroy=True`` on a pointer-less row has no state to tear down.
+
+    Each unrecord order sets ``must_succeed=False``: the SaaS ``run_complete``
+    by-project sweep is the PRIMARY backstop and is gated on a COMPLETED
+    destroy. The CLI record-only delete fails loud on an already-gone row, so
+    a must-succeed unrecord could fail an otherwise-complete destroy and block
+    that primary sweep. The leave-in-place-on-failure guarantee is carried by
+    ``must_succeed=True`` on the RESOURCE teardown orders, not these.
+    """
+    if not record_only_requests:
+        return
+
+    stack.wait_all(must_complete=True)
+
+    for request in record_only_requests:
+        stack.logger.debug(f"unrecording record-only row {request}")
+        order = stack.add_resource(
+            role="resource/remove/record",
+            pargs="resource remove",
+            order_type="resource_delete::proxy",
+            default_values={**request, "destroy": False},
+            human_description="Unrecord record-only row after teardown",
+        )
+        order["must_succeed"] = False
 
 
 def run(stackargs):
@@ -207,7 +272,7 @@ def run(stackargs):
 
     keep_resource_ids = _get_keep_resources(stack)
 
-    parallel_requests, sequential_requests = _get_delete_resources(
+    parallel_requests, sequential_requests, record_only_requests = _get_delete_resources(
         stack,
         keep_resource_ids=keep_resource_ids)
 
@@ -221,6 +286,9 @@ def run(stackargs):
         for resource in parallel_requests + sequential_requests:
             stack.logger.debug(f"removing resource {resource}")
             stack.remove_resource(**resource)
+        # wait_all(must_complete=True) inside closes the parallel window and
+        # fences the record-only unrecords behind the whole concurrent batch.
+        _unrecord_record_only_rows_last(stack, record_only_requests)
         return stack.get_results(None)
 
     # Two tiers, as the original (_main/run.py:153-167): the independent
@@ -240,5 +308,9 @@ def run(stackargs):
     for resource in sequential_requests:
         stack.logger.debug(f"removing resource {resource}")
         stack.remove_resource(**resource)
+
+    # The record-only rows are unrecorded LAST, fenced behind every teardown
+    # order by a wait_all(must_complete=True) barrier (user decision).
+    _unrecord_record_only_rows_last(stack, record_only_requests)
 
     return stack.get_results(None)
