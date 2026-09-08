@@ -17,11 +17,12 @@
 
 from config0_stack_runtime.resource_record import classify_delete_mode
 
-# A recorded infrastructure teardown transports ONLY the row id. The CLI reads
-# the immutable execution asset, merged mod_params/destroy_params, and tfstate
-# pointer from that QHost row. Passing any asset here would permit the caller to
-# destroy with a version other than the one that created the resource.
-_TEARDOWN_KEYS = ("_id",)
+# A recorded infrastructure teardown transports the row id and the schedule that
+# created it. The CLI reads the immutable execution asset, merged
+# mod_params/destroy_params, and tfstate pointer from that QHost row. Passing any
+# asset here would permit the caller to destroy with a version other than the one
+# that created the resource.
+_TEARDOWN_KEYS = ("_id", "schedule_id")
 
 # The record-only delete transports the row identity plus every state-pointer
 # key, and nothing else: unrecord_resource's intake is closed to exactly these,
@@ -41,10 +42,16 @@ def _project(resource, keys):
 
 
 def _teardown_projection(resource):
-    """Project the matched row to its id-only immutable destroy request."""
+    """Project the matched row to its immutable destroy request."""
     projected = _project(resource, _TEARDOWN_KEYS)
     if not projected.get("_id"):
         raise ValueError("state-backed resource teardown requires the recorded _id")
+    schedule_id = projected.get("schedule_id")
+    if not isinstance(schedule_id, str) or schedule_id in ("", "null", "None"):
+        raise ValueError(
+            f"resource {projected['_id']!r} has no schedule_id; "
+            "destroy cannot mint its execution credentials"
+        )
     return projected
 
 

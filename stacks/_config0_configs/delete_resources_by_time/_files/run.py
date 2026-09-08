@@ -17,15 +17,16 @@
 
 from datetime import datetime
 
-# A recorded infrastructure teardown transports ONLY the row id. The CLI reads
-# the immutable execution asset, merged mod_params/destroy_params, and tfstate
-# pointer from that QHost row. Passing an asset here would let caller state drift
-# away from the exact version that created the resource.
-_TEARDOWN_KEYS = ("_id",)
+# A recorded infrastructure teardown transports the row id and the schedule that
+# created it. The CLI reads the immutable execution asset, merged
+# mod_params/destroy_params, and tfstate pointer from that QHost row. Passing an
+# asset here would let caller state drift away from the exact version that
+# created the resource.
+_TEARDOWN_KEYS = ("_id", "schedule_id")
 
 
 def _teardown_projection(resource):
-    """Project one recorded resource to its id-only immutable destroy request."""
+    """Project one recorded resource to its immutable destroy request."""
     projected = {
         key: resource[key]
         for key in _TEARDOWN_KEYS
@@ -33,6 +34,12 @@ def _teardown_projection(resource):
     }
     if not projected.get("_id"):
         raise ValueError("state-backed resource teardown requires the recorded _id")
+    schedule_id = projected.get("schedule_id")
+    if not isinstance(schedule_id, str) or schedule_id in ("", "null", "None"):
+        raise ValueError(
+            f"resource {projected['_id']!r} has no schedule_id; "
+            "destroy cannot mint its execution credentials"
+        )
     return projected
 
 
@@ -110,8 +117,8 @@ def _get_delete_resources(stack, keep_resource_ids=None):
       resources depend on one another. A missing or invalid timestamp raises.
 
     Returns ``(parallel_requests, sequential_requests, record_only_requests)``.
-    The record-only requests are id-only projections, sorted by ``_id`` for a
-    deterministic trailing unrecord step.
+    Every request carries its row's ``_id`` and ``schedule_id``. Record-only
+    requests are sorted by ``_id`` for a deterministic trailing unrecord step.
     """
     added_ids = []
     parallel_candidates = []
@@ -119,10 +126,10 @@ def _get_delete_resources(stack, keep_resource_ids=None):
     record_only_candidates = []
     matched_row_count = 0
 
-    # A destroy enumerates the STORED rows: the teardown order carries only the
-    # _id and the CLI reads the frozen state pointer off the row. Never overlay
-    # here - a read-time overlay aborts the whole list on any row whose
-    # artifacts it cannot reach, and then nothing can be torn down.
+    # A destroy enumerates the STORED rows: the teardown order carries the _id
+    # and row schedule_id; the CLI reads the frozen state pointer off the row.
+    # Never overlay here - a read-time overlay aborts the whole list on any
+    # row whose artifacts it cannot reach, and then nothing can be torn down.
     for ref_schedule_id in stack.to_list(stack.ref_schedule_ids):
         _resources = stack.get_resource(ref_schedule_id=ref_schedule_id,
                                         overlay_tfstate=False)
@@ -223,9 +230,10 @@ def _unrecord_record_only_rows_last(stack, record_only_requests):
       order after the barrier, so no unrecord runs and the rows survive for
       the retry. ``must_complete=True`` also drains: all teardowns attempt
       before the job fails, maximizing removal per pass.
-    - each row delete is a ``resource/remove/record`` order carrying
-      ``{_id, destroy: False}``. The worker routes ``resource/remove`` to the
-      CLI resource-remove handler, whose ``destroy=False`` branch deletes the
+    - each row delete is a ``resource/remove/record`` order carrying the row's
+      ``schedule_id`` plus ``{_id, destroy: False}``. The worker routes
+      ``resource/remove`` to the CLI resource-remove handler, whose
+      ``destroy=False`` branch deletes the
       matched record-only row (no engine teardown). ``remove_resource`` cannot
       emit this: its ``_id`` branch hardcodes ``destroy=True``, and a
       ``destroy=True`` on a pointer-less row has no state to tear down.
@@ -248,7 +256,8 @@ def _unrecord_record_only_rows_last(stack, record_only_requests):
             role="resource/remove/record",
             pargs="resource remove",
             order_type="resource_delete::proxy",
-            default_values={**request, "destroy": False},
+            schedule_id=request["schedule_id"],
+            default_values={"_id": request["_id"], "destroy": False},
             human_description="Unrecord record-only row after teardown",
         )
         order["must_succeed"] = False
