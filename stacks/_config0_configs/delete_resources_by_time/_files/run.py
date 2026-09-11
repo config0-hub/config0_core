@@ -83,6 +83,22 @@ def _has_state_pointer(resource):
                for key in _STATE_POINTER_KEYS)
 
 
+def _is_connection_pointer(resource):
+    """True for the schedule->aws_account connection pointer row.
+
+    ``resource_type == "reference"`` with ``reference_target == "aws_account"``
+    and ``_id == reference:<schedule_id>:aws_account:<name>`` (config0-saas-api
+    build_connection_reference_row / target_account). Every order of the
+    schedule resolves its target credentials through this row, so it must be
+    unrecorded LAST - after every other record-only row of the schedule. Deleting
+    it first 422s any sibling still resolving credentials ("No connection pointer
+    ... found"; found live 2026-09-10, remove-project of vpc-two-accounts). The
+    saas-api client folds the builder's top-level fields into ``data`` and
+    get_resource flattens them back, so ``reference_target`` reads top-level."""
+    return (resource.get("resource_type") == "reference"
+            and resource.get("reference_target") == "aws_account")
+
+
 def _created_at_sort_key(resource):
     """Parse the rewrite resource row's authoritative creation timestamp."""
     return datetime.fromisoformat(resource["created_at"])
@@ -187,12 +203,15 @@ def _get_delete_resources(stack, keep_resource_ids=None):
         reverse=True,
     )
 
-    # The record-only rows are independent row deletes; sort by _id only so the
+    # The record-only rows are independent row deletes; sort by _id so the
     # trailing unrecord step is deterministic without requiring a created_at on
-    # a non-infrastructure row.
+    # a non-infrastructure row. A schedule->aws_account connection pointer sorts
+    # LAST (a strictly later slot in the sibling chain than every other
+    # record-only unrecord): every order of the schedule resolves credentials
+    # through it, so it must be the last record-only row removed.
     record_only_candidates = sorted(
         record_only_candidates,
-        key=lambda r: r["_id"],
+        key=lambda r: (_is_connection_pointer(r), r["_id"]),
     )
 
     stack.logger.debug(
