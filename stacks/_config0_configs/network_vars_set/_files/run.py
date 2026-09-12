@@ -22,9 +22,19 @@ def run(stackargs):
     # Required parameters
     stack.parse.add_required(key="vars_set_name")
 
+    # Human decision 2026-09-12 (run williaumwu_gvrrsw, project envsql-track):
+    # "It doesn't mean that it's a necessary requirement, but we're going to
+    # force it as a requirement. We're going to be very opinionated about
+    # this because we don't want users making this mistake. It's very
+    # detrimental if it can't find or query variable sets to actually
+    # resolve into actual variables to be used in stacks."
+    # labels_hash is therefore required, with no default: a vars_set row
+    # written with no labels can never be found by any selector, so it can
+    # never resolve into variables for a stack.
+    stack.parse.add_required(key="labels_hash")
+
     # Optional parameters with defaults
     stack.parse.add_optional(key="env_vars_hash", default='null')
-    stack.parse.add_optional(key="labels_hash", default='null')
     stack.parse.add_optional(key="arguments_hash", default='null')
     stack.parse.add_optional(key="evaluate", default='null')
 
@@ -44,10 +54,18 @@ def run(stackargs):
     if stack.get_attr("env_vars_hash"):
         resource["values"]["env_vars"] = stack.deserialize(stack.env_vars_hash, json=True)
 
-    if stack.get_attr("labels_hash"):
-        stack.set_variable("_labels",
-                           stack.deserialize(stack.labels_hash, json=True))
-        resource["values"]["labels"] = stack._labels
+    stack.set_variable("_labels",
+                       stack.deserialize(stack.labels_hash, json=True))
+
+    if not stack._labels:
+        raise Exception(
+            f'vars_set "{stack.vars_set_name}" must carry labels: '
+            'a selector queries vars_set rows by label, so a vars_set with '
+            'no labels can never be found and can never resolve into '
+            'variables for a stack.'
+        )
+
+    resource["values"]["labels"] = stack._labels
 
     if stack.get_attr("arguments_hash"):
         stack.set_variable("_arguments",
