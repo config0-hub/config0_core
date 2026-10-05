@@ -39,6 +39,9 @@ def run(stackargs):
 
     # Initialize
     stack.init_variables()
+    for argument in ("parallel_ids", "sequential_ids"):
+        if not isinstance(stack.get_attr(argument), list):
+            raise TypeError(f"callback_delete: {argument} must be a list")
     stack.init_substacks()
 
     # Get all the schedule_ids

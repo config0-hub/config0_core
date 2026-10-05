@@ -21,6 +21,10 @@ import os
 from config0_publisher.json_helpers import print_json
 from config0_publisher.loggerly import Config0Logger
 
+# Stack runtime depends on config0_publisher, not its peer execgroup runtime.
+# Mirror state_pointer.UNSET_SENTINELS here; the CLI regression pins parity.
+_UNSET_STATEFUL_IDS = ("", "null", "None", "none", "_random", None)
+
 
 class CmEnvVars:
     """
@@ -39,7 +43,7 @@ class CmEnvVars:
             "LOG_BUCKET",
             "APP_DIR",
             "STATEFUL_DIR",
-            "STATEFUL_ID"
+            "STATEFUL_ID",
             "REMOTE_STATEFUL_BUCKET",
             "RUN_SHARE_DIR",
             "SHARE_DIR",
@@ -141,6 +145,11 @@ class CmEnvVars:
 
         self.add(self.common_keys,
                  self._default())
+
+        # Leave the unset ID to the execution runtime's state-pointer resolver.
+        if ("STATEFUL_ID" in self.env_vars
+                and self.env_vars["STATEFUL_ID"] in _UNSET_STATEFUL_IDS):
+            del self.env_vars["STATEFUL_ID"]
 
     def reset(self):
         self.env_vars = {}
@@ -317,16 +326,11 @@ class Config0Resource:
             "stateful_id": self.stack.stateful_id
         }
 
-        if self.stack.get_attr("ssm_name"):
-            inputargs["ssm_name"] = self.stack.ssm_name
-
         if self.stack.remote_stateful_bucket:
             inputargs["remote_stateful_bucket"] = self.stack.remote_stateful_bucket
 
         if self.stack.get_attr("timeout"):
             inputargs["timeout"] = self.stack.timeout
-
-        inputargs["display_hash"] = self.stack.get_hash_object(inputargs)
 
         return inputargs
 
