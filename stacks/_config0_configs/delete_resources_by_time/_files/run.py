@@ -17,11 +17,15 @@
 
 from datetime import datetime
 
-# A recorded infrastructure teardown transports the row id and the schedule that
-# created it. The CLI reads the immutable execution asset, merged
-# mod_params/destroy_params, and tfstate pointer from that QHost row. Passing an
-# asset here would let caller state drift away from the exact version that
-# created the resource.
+from config0_stack_runtime.resource_record import recorded_teardown_timeout
+
+# A recorded infrastructure teardown transports the row id, the schedule that
+# created it, and the engine budget the create ran with (the row's
+# mod_params.env_vars.BUILD_TIMEOUT, read by recorded_teardown_timeout) as the
+# order's timeout, so the destroy never runs on a shorter clock than the create.
+# The CLI reads the immutable execution asset, merged mod_params/destroy_params,
+# and tfstate pointer from that QHost row. Passing an asset here would let caller
+# state drift away from the exact version that created the resource.
 _TEARDOWN_KEYS = ("_id", "schedule_id")
 
 
@@ -40,6 +44,9 @@ def _teardown_projection(resource):
             f"resource {projected['_id']!r} has no schedule_id; "
             "destroy cannot mint its execution credentials"
         )
+    timeout = recorded_teardown_timeout(resource)
+    if timeout is not None:
+        projected["timeout"] = timeout
     return projected
 
 
