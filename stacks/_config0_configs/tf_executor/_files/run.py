@@ -57,13 +57,6 @@ class CmEnvVars:
             "TF_RUNTIME"
         ]
 
-        self.standard_codebuild_keys = [
-            "BUILD_TIMEOUT",
-            "CODEBUILD_IMAGE",
-            "CODEBUILD_COMPUTE_TYPE",
-            "CODEBUILD_IMAGE_TYPE"
-        ]
-
         self.standard_lambda_keys = [
             "BUILD_TIMEOUT"
         ]
@@ -74,15 +67,6 @@ class CmEnvVars:
     def _default():
         return {
             "TIMEOUT": "600"
-        }
-
-    @staticmethod
-    def _default_codebuild():
-        return {
-            "AWS_DEFAULT_REGION": "us-east-1",
-            "CODEBUILD_IMAGE": "aws/codebuild/standard:4.0",
-            "CODEBUILD_COMPUTE_TYPE": "BUILD_GENERAL1_SMALL",
-            "CODEBUILD_IMAGE_TYPE": "LINUX_CONTAINER"
         }
 
     @staticmethod
@@ -111,13 +95,6 @@ class CmEnvVars:
 
         self.add(self.standard_lambda_keys,
                  self._default_lambda())
-
-    def set_codebuild(self, reset=False):
-        if reset:
-            self.reset()
-
-        self.add(self.standard_codebuild_keys,
-                 self._default_codebuild())
 
     def set_resource(self, reset=False):
         if reset:
@@ -196,8 +173,9 @@ class CmEnvVars:
 
 class TFRunExec:
     """
-    The runtimes include AWS Codebuild, Lambda function, or docker container
-    to execute the Terraform/OpenTofu code
+    Builds the tf_executor order for the engine, which runs the
+    Terraform/OpenTofu code in Lambda or CodeBuild based on the timeout
+    (over 800 seconds selects CodeBuild).
     """
 
     def __init__(self, stack):
@@ -207,7 +185,6 @@ class TFRunExec:
         self.cmvars = CmEnvVars(stack=stack)
         self.cmvars.set_common()
         self.cmvars.set_lambda()
-        self.cmvars.set_codebuild()
 
         # transfer the common vars here
         self.env_vars = self.cmvars.env_vars
@@ -583,7 +560,7 @@ def run(stackargs):
                            stack.deserialize(stack.tf_vars_hash, json=True))
 
     # terraform executor runtime environment variables
-    # e.g. Codebuild, Lambda, Docker Container
+    # (injected into the engine run, Lambda or CodeBuild)
     if stack.get_attr("runtime_env_vars_hash"):
         stack.set_variable("runtime_env_vars",
                            stack.deserialize(stack.runtime_env_vars_hash, json=True))

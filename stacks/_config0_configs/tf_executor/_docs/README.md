@@ -1,7 +1,7 @@
 # Terraform Resource Execution and Management
 
 ## Description
-This module manages Terraform/OpenTofu resource execution and interacts with the Config0 resource database. It provides a framework for deploying infrastructure as code using different runtime environments including AWS CodeBuild, Lambda functions, and Docker containers.
+This module manages Terraform/OpenTofu resource execution and interacts with the Config0 resource database. It provides a framework for deploying infrastructure as code through the engine; the engine runs the Terraform/OpenTofu work in Lambda or CodeBuild, chosen by the order's timeout (over 800 seconds selects CodeBuild).
 
 ## Variables
 
