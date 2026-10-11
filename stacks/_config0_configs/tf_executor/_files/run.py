@@ -278,6 +278,12 @@ class Config0Resource:
         cmvars.set_resource()
         self.env_vars = cmvars.env_vars
 
+        # The order's CodeBuild compute size, beside its TIMEOUT: the CLI keeps
+        # it from the order's env_vars and config0_publisher sends it as the
+        # engine payload's compute_type. Absent means the engine's default.
+        if self.stack.get_attr("compute_type"):
+            self.env_vars["BUILD_COMPUTE_TYPE"] = self.stack.compute_type
+
         cmvars.validate(self.env_vars,
                         include_num=False)
 
@@ -502,6 +508,12 @@ def run(stackargs):
     stack.parse.add_optional(key="timeout",
                              default=1650,
                              types="int")
+
+    # CodeBuild compute size for this order's engine run (AWS values:
+    # BUILD_GENERAL1_SMALL|MEDIUM|LARGE|XLARGE|2XLARGE). CodeBuild target only;
+    # no default, the engine's own project default applies when unset.
+    stack.parse.add_optional(key="compute_type",
+                             types="str")
 
     stack.parse.add_optional(key="cloud_tags_hash",
                              default='null',

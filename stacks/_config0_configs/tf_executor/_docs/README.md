@@ -1,7 +1,7 @@
 # Terraform Resource Execution and Management
 
 ## Description
-This module manages Terraform/OpenTofu resource execution and interacts with the Config0 resource database. It provides a framework for deploying infrastructure as code through the engine; the engine runs the Terraform/OpenTofu work in Lambda or CodeBuild, chosen by the order's timeout (over 800 seconds selects CodeBuild).
+This module manages Terraform/OpenTofu resource execution and interacts with the Config0 resource database. It provides a framework for deploying infrastructure as code through the engine; the engine runs the Terraform/OpenTofu work in Lambda or CodeBuild, chosen by the order's timeout (over 800 seconds selects CodeBuild). The CodeBuild compute size is a separate per-order choice: `compute_type` (`BUILD_COMPUTE_TYPE` on the order), one of the AWS `BUILD_GENERAL1_SMALL|MEDIUM|LARGE|XLARGE|2XLARGE` values, CodeBuild only; unset means the engine's project default.
 
 ## Variables
 
@@ -24,6 +24,7 @@ This module manages Terraform/OpenTofu resource execution and interacts with the
 | resource_id | Configuration for resource id | null |
 | runtime_env_vars | Runtime environment variables | null |
 | timeout | Configuration for timeout | 1650 |
+| compute_type | CodeBuild compute size for the engine run (AWS BUILD_GENERAL1_SMALL/MEDIUM/LARGE/XLARGE/2XLARGE); CodeBuild target only; unset = the engine's default | &nbsp; |
 | cloud_tags_hash | Resource tags for cloud provider | null |
 | stateful_id | Stateful ID for storing the resource code/state | _random |
 | remote_stateful_bucket | S3 bucket for Terraform state | null |
