@@ -22,7 +22,7 @@ class Main(newSchedStack):
     One work job:
 
         cleanup          `config0 gitops cleanup ...` - closes the project's
-                         recorded PRs (write-back + mutation) with the add-on's
+                         recorded PRs (day-one code + mutation) with the add-on's
                          clone token and unregisters its state pairs from the
                          openci-tf settings table.
 
@@ -30,7 +30,7 @@ class Main(newSchedStack):
     (aws-connections contract). The project's destroy run is frozen to the
     PROJECT's account, but the clone token (SSM) and the openci-tf-settings
     table exist only in the hub. saas-api's remove_project dispatches this
-    stack frozen to the hub - the same shape as gitops_writeback - so the
+    stack frozen to the hub - the same shape as gitops_day_one_code - so the
     verb runs under gitops/tenant/execute with the hub's target session.
 
     The PR numbers ride as arguments: the pipeline / pipeline_run rows that

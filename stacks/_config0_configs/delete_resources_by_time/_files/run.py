@@ -83,6 +83,10 @@ _STATE_POINTER_KEYS = ("stateful_id",
                        "remote_stateful_location",
                        "remote_stateful_bucket")
 
+# saas-api's completion sweep reads the PR numbers off these rows for the
+# gitops cleanup run, then drops them - the destroy never unrecords them.
+_COMPLETION_SWEEP_RESOURCE_TYPES = ("pipeline", "pipeline_run")
+
 
 def _has_state_pointer(resource):
     """A row carrying any state pointer is real infrastructure."""
@@ -166,6 +170,8 @@ def _get_delete_resources(stack, keep_resource_ids=None):
             if _id in added_ids:
                 continue
             if keep_resource_ids and _id in keep_resource_ids:
+                continue
+            if _resource.get("resource_type") in _COMPLETION_SWEEP_RESOURCE_TYPES:
                 continue
             if not _has_state_pointer(_resource):
                 stack.logger.debug(
