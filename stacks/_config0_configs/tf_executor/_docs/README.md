@@ -29,7 +29,7 @@ This module manages Terraform/OpenTofu resource execution and interacts with the
 | stateful_id | Stateful ID for storing the resource code/state | _random |
 | remote_stateful_bucket | S3 bucket for Terraform state | null |
 | publish_to_saas | Boolean to publish values to config0 SaaS UI | true |
-| tf_runtime | Terraform runtime version | tofu:1.9.1 |
+| tf_runtime | Terraform runtime version | tofu:1.10.6 |
 | ssm_name | SSM parameter name | &nbsp; |
 
 ## Dependencies
