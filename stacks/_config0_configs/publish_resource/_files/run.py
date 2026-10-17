@@ -15,6 +15,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
+from config0_publisher.resource.tf_configure import flatten_labels
+
+
 def run(stackargs):
 
     import copy
@@ -54,10 +57,12 @@ def run(stackargs):
         match["name"] = stack.name
 
     if stack.get_attr("ref_schedule_id"):
-        match["schedule_id"] = stack.ref_schedule_id
+        match["ref_schedule_id"] = stack.ref_schedule_id
 
+    # an attached label is a flat labels_<name> field on the row, its name in
+    # snake_case: the writer's own flatten_labels builds the same field
     if stack.get_attr("labels_hash"):
-        match["labels"] = stack.deserialize(stack.labels_hash, json=True)
+        match["match"] = flatten_labels(stack.deserialize(stack.labels_hash, json=True))
 
     match["must_be_one"] = True
     resource_info = list(stack.get_resource(**match))

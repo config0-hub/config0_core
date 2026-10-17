@@ -15,6 +15,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
+from config0_publisher.resource.tf_configure import flatten_labels
+
+
 def run(stackargs):
 
     import json
@@ -67,8 +70,10 @@ def run(stackargs):
         if stack.get_attr("ref_schedule_id"):
             match["schedule_id"] = stack.ref_schedule_id
 
+    # an attached label is a flat labels_<name> field on the row, its name in
+    # snake_case: the writer's own flatten_labels builds the same field
     if stack.get_attr("labels_hash"):
-        match["labels"] = stack.deserialize(stack.labels_hash, json=True)
+        match.update(flatten_labels(stack.deserialize(stack.labels_hash, json=True)))
 
     resource_info = list(stack.get_resource(match=match,
                                            must_be_one=True))
@@ -94,15 +99,15 @@ def run(stackargs):
                 continue
 
             if isinstance(data[_key], list):
+                # join takes only strings; a list of numbers or objects
+                # is published as is.
                 try:
                     _value = ",".join(data[_key])
-                except:
+                except TypeError:
                     _value = data[_key]
             elif isinstance(data[_key], dict):
-                try:
-                    _value = json.dumps(data[_key])
-                except:
-                    _value = data[_key]
+                # the row came back as JSON, so its dicts always dump
+                _value = json.dumps(data[_key])
             else:
                 _value = data[_key]
 

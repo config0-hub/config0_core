@@ -100,12 +100,9 @@ class CmEnvVars:
         if reset:
             self.reset()
 
-        try:
-            env_vars = self.stack.resource_configs["env_vars"]
-        except Exception:
-            env_vars = {}
-
-        self.update(env_vars)
+        # resource_configs is the decoded resource_configs_hash; env_vars is
+        # optional in it.
+        self.update(self.stack.resource_configs.get("env_vars"))
 
     def update(self, env_vars=None):
         if not env_vars:
@@ -139,7 +136,7 @@ class CmEnvVars:
             if include_num:
                 try:
                     number_value = int(_value)
-                except Exception:
+                except (TypeError, ValueError):
                     number_value = None
                 if number_value:
                     env_vars[_key] = f"{_value}"
@@ -268,9 +265,6 @@ class Config0Resource:
             self.values = resource_configs["values"]
         else:
             self.values = {}
-
-        if self.stack.get_attr("drift_protection"):
-            self.values["drift_protection"] = True
 
     def _set_env_vars(self):
         cmvars = CmEnvVars(stack=self.stack)
@@ -404,20 +398,14 @@ class TFConfigHelper:
 
     def _add_provider_maps(self, tf_configs):
         if self.stack.get_attr("provider") == "aws":
-            try:
-                tf_configs["resource_configs"]["maps"] = {
-                    "region": "aws_default_region"
-                }
-            except Exception:
-                self.logger.debug("could not add map keys for aws")
+            tf_configs["resource_configs"]["maps"] = {
+                "region": "aws_default_region"
+            }
 
         if self.stack.get_attr("provider") == "do":
-            try:
-                tf_configs["resource_configs"]["maps"] = {
-                    "region": "do_region"
-                }
-            except Exception:
-                self.logger.debug("could not add map keys for do")
+            tf_configs["resource_configs"]["maps"] = {
+                "region": "do_region"
+            }
 
     def _add_cloudprovider(self):
         # add cloud provider specific regions
@@ -540,10 +528,6 @@ def run(stackargs):
                              default="branch",
                              choices=["branch", "folder"],
                              types="str")
-
-    stack.parse.add_optional(key="drift_protection",
-                             default=True,
-                             types="bool,str")
 
     stack.parse.add_optional(key="ssm_name",
                              tags="resource,docker",

@@ -94,10 +94,12 @@ def run(stackargs):
     # Initialize Variables in stack
     stack.init_variables()
 
+    # Keyword arguments to get_resource: it has no _id keyword, so the id goes
+    # in match, and ref_schedule_id is its schedule_id filter.
     _destroy_match = {}
 
     if stack.get_attr("db_id"):
-        _destroy_match["_id"] = stack.db_id
+        _destroy_match["match"] = {"_id": stack.db_id}
 
     if stack.get_attr("hostname"):
         _destroy_match["hostname"] = stack.hostname
@@ -106,7 +108,7 @@ def run(stackargs):
         _destroy_match["name"] = stack.name
 
     if stack.get_attr("ref_schedule_id"):
-        _destroy_match["schedule_id"] = stack.ref_schedule_id
+        _destroy_match["ref_schedule_id"] = stack.ref_schedule_id
 
     if stack.get_attr("resource_type"):
         _destroy_match["resource_type"] = stack.resource_type

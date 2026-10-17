@@ -94,6 +94,18 @@ def _has_state_pointer(resource):
                for key in _STATE_POINTER_KEYS)
 
 
+def _is_ssm_secret(resource):
+    """True for a stack.add_secret row that wrote an SSM parameter.
+
+    The row has no state pointer, but its ``ssm_path`` names a parameter in
+    the target account. Its removal deletes that parameter, so it is a
+    recorded-row teardown (remove_resource by _id), not a record-only row.
+    An insert_ssm=False secret row records ssm_path=None and stays record-only.
+    """
+    return (resource.get("resource_type") == "secret"
+            and resource.get("ssm_path") not in (None, "", "null", "None"))
+
+
 def _is_connection_pointer(resource):
     """True for the schedule->aws_account connection pointer row.
 
@@ -122,6 +134,11 @@ def _get_delete_resources(stack, keep_resource_ids=None):
 
     - a row carrying a state pointer is real infrastructure → an
       execution-backed ``remove_resource`` teardown order;
+    - a ``secret`` row that names an SSM parameter (``ssm_path``) → a
+      ``remove_resource`` teardown order that deletes the parameter and the
+      row. It runs after every infrastructure teardown (a terraform row's
+      destroy reads its SSM parameter through ``ssm_name``) and before the
+      record-only unrecords;
     - a record-only row (schedule_vars, job_vars, selectors, labels,
       reference, vars_set) has nothing to run. It is the destroy's own
       argument base and retry evidence (the addon destroy plan reads the
@@ -143,13 +160,15 @@ def _get_delete_resources(stack, keep_resource_ids=None):
       (newest first). This is the dependency-safe removal order where
       resources depend on one another. A missing or invalid timestamp raises.
 
-    Returns ``(parallel_requests, sequential_requests, record_only_requests)``.
-    Every request carries its row's ``_id`` and ``schedule_id``. Record-only
-    requests are sorted by ``_id`` for a deterministic trailing unrecord step.
+    Returns ``(parallel_requests, sequential_requests, secret_requests,
+    record_only_requests)``. Every request carries its row's ``_id`` and
+    ``schedule_id``. Secret and record-only requests are sorted by ``_id`` for
+    a deterministic trailing step.
     """
     added_ids = []
     parallel_candidates = []
     sequential_candidates = []
+    secret_candidates = []
     record_only_candidates = []
     matched_row_count = 0
 
@@ -172,6 +191,10 @@ def _get_delete_resources(stack, keep_resource_ids=None):
             if keep_resource_ids and _id in keep_resource_ids:
                 continue
             if _resource.get("resource_type") in _COMPLETION_SWEEP_RESOURCE_TYPES:
+                continue
+            if _is_ssm_secret(_resource):
+                added_ids.append(_id)
+                secret_candidates.append(_resource)
                 continue
             if not _has_state_pointer(_resource):
                 stack.logger.debug(
@@ -235,6 +258,11 @@ def _get_delete_resources(stack, keep_resource_ids=None):
         f"sequential teardown candidate ids (reverse created_at order) "
         f"{[r.get('_id') for r in sequential_candidates]}"
     )
+    secret_candidates = sorted(secret_candidates, key=lambda r: r["_id"])
+    stack.logger.debug(
+        f"SSM secret candidate ids (removed after teardown) "
+        f"{[r.get('_id') for r in secret_candidates]}"
+    )
     stack.logger.debug(
         f"record-only candidate ids (unrecorded last) "
         f"{[r.get('_id') for r in record_only_candidates]}"
@@ -242,12 +270,22 @@ def _get_delete_resources(stack, keep_resource_ids=None):
 
     parallel_requests = [_teardown_projection(r) for r in parallel_candidates]
     sequential_requests = [_teardown_projection(r) for r in sequential_candidates]
+    secret_requests = [_teardown_projection(r) for r in secret_candidates]
     record_only_requests = [_teardown_projection(r) for r in record_only_candidates]
-    return parallel_requests, sequential_requests, record_only_requests
+    return parallel_requests, sequential_requests, secret_requests, record_only_requests
 
 
-def _unrecord_record_only_rows_last(stack, record_only_requests):
-    """Emit the trailing unrecord STEP - delete the record-only rows LAST.
+def _remove_secrets_and_unrecord_rows_last(stack, secret_requests, record_only_requests):
+    """Emit the trailing STEP - the SSM secret removes, then the record-only
+    unrecords, LAST.
+
+    The SSM secret rows are inputs a teardown may still read (a terraform
+    row's destroy reads its SSM parameter through ``ssm_name``), so their
+    removes run after the barrier below, as ``remove_resource`` orders with
+    the default ``must_succeed=True``: a failed SSM delete fails the destroy
+    and holds every unrecord after it. They run before the record-only
+    unrecords, while the schedule's connection pointer still resolves their
+    target credentials.
 
     The record-only rows are the destroy's argument base and retry evidence
     (defect 45), so their delete must run ONLY after every resource teardown
@@ -277,10 +315,14 @@ def _unrecord_record_only_rows_last(stack, record_only_requests):
     that primary sweep. The leave-in-place-on-failure guarantee is carried by
     ``must_succeed=True`` on the RESOURCE teardown orders, not these.
     """
-    if not record_only_requests:
+    if not secret_requests and not record_only_requests:
         return
 
     stack.wait_all(must_complete=True)
+
+    for resource in secret_requests:
+        stack.logger.debug(f"removing SSM secret row {resource}")
+        stack.remove_resource(**resource)
 
     for request in record_only_requests:
         stack.logger.debug(f"unrecording record-only row {request}")
@@ -313,7 +355,8 @@ def run(stackargs):
 
     keep_resource_ids = _get_keep_resources(stack)
 
-    parallel_requests, sequential_requests, record_only_requests = _get_delete_resources(
+    (parallel_requests, sequential_requests,
+     secret_requests, record_only_requests) = _get_delete_resources(
         stack,
         keep_resource_ids=keep_resource_ids)
 
@@ -328,8 +371,9 @@ def run(stackargs):
             stack.logger.debug(f"removing resource {resource}")
             stack.remove_resource(**resource)
         # wait_all(must_complete=True) inside closes the parallel window and
-        # fences the record-only unrecords behind the whole concurrent batch.
-        _unrecord_record_only_rows_last(stack, record_only_requests)
+        # fences the SSM secret removes and the record-only unrecords behind
+        # the whole concurrent batch.
+        _remove_secrets_and_unrecord_rows_last(stack, secret_requests, record_only_requests)
         return stack.get_results(None)
 
     # Two tiers, as the original (_main/run.py:153-167): the independent
@@ -350,8 +394,9 @@ def run(stackargs):
         stack.logger.debug(f"removing resource {resource}")
         stack.remove_resource(**resource)
 
-    # The record-only rows are unrecorded LAST, fenced behind every teardown
-    # order by a wait_all(must_complete=True) barrier (user decision).
-    _unrecord_record_only_rows_last(stack, record_only_requests)
+    # The SSM secret rows are removed, then the record-only rows unrecorded,
+    # LAST, fenced behind every teardown order by a wait_all(must_complete=True)
+    # barrier (user decision).
+    _remove_secrets_and_unrecord_rows_last(stack, secret_requests, record_only_requests)
 
     return stack.get_results(None)

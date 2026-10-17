@@ -11,5 +11,4 @@ tags:
    - terraform
    - opentofu
    - iac
-   - drift-protection
    - state-management

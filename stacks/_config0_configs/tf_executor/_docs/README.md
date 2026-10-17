@@ -31,7 +31,6 @@ This module manages Terraform/OpenTofu resource execution and interacts with the
 | publish_to_saas | Boolean to publish values to config0 SaaS UI | true |
 | tf_runtime | Terraform runtime version | tofu:1.9.1 |
 | iac_ci_pr_strategy | Configuration for iac ci pr strategy (choices: branch, folder) | branch |
-| drift_protection | Boolean to enable drift detection | true |
 | ssm_name | SSM parameter name | &nbsp; |
 
 ## Dependencies
