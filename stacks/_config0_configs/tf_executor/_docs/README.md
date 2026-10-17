@@ -30,14 +30,12 @@ This module manages Terraform/OpenTofu resource execution and interacts with the
 | remote_stateful_bucket | S3 bucket for Terraform state | null |
 | publish_to_saas | Boolean to publish values to config0 SaaS UI | true |
 | tf_runtime | Terraform runtime version | tofu:1.9.1 |
-| iac_ci_pr_strategy | Configuration for iac ci pr strategy (choices: branch, folder) | branch |
 | ssm_name | SSM parameter name | &nbsp; |
 
 ## Dependencies
 
 ### Substacks
 - [config0-hub:::config0_core::output_resource_to_ui](https://api-app.config0.com/web_api/v1.0/stacks/config0-hub/output_resource_to_ui)
-- [config0-hub:::config0_core::setup_iac_ci_on_github](https://api-app.config0.com/web_api/v1.0/stacks/config0-hub/setup_iac_ci_on_github)
 
 ### Execgroups
 - The execgroup identified by `stack.execgroup_ref` with type "cloud_resource"

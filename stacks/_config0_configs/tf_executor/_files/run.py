@@ -524,20 +524,12 @@ def run(stackargs):
                              default="tofu:1.10.6",
                              types="str")
 
-    stack.parse.add_optional(key="iac_ci_pr_strategy",
-                             default="branch",
-                             choices=["branch", "folder"],
-                             types="str")
-
     stack.parse.add_optional(key="ssm_name",
                              tags="resource,docker",
                              types="str")
 
     # publish_resource -> output_resource_to_ui
     stack.add_substack('config0-hub:::config0_core::output_resource_to_ui')
-
-    # this will write the tf files to specific gitops repository
-    stack.add_substack('config0-hub:::config0_core::setup_iac_ci_on_github')
 
     # Initialize Variables in stack
     stack.init_variables()
@@ -574,26 +566,5 @@ def run(stackargs):
         output_inputargs = tfconfig.get_output_inputargs()
         stack.output_resource_to_ui.insert(display=True,
                                            **output_inputargs)
-
-    # determine whether we need to setup iac ci
-    if not stack.inputvars.get("iac_ci_repo"):
-        return stack.get_results()
-
-    arguments = {
-        "stateful_id": stack.stateful_id,
-        "resource_type": stack.resource_type,
-        "iac_ci_pr_strategy": stack.iac_ci_pr_strategy
-    }
-
-    # only really tested for github, but
-    # will expand to bitbucket and gitlab
-    if stack.inputvars.get("iac_ci_repo_provider", "github") == "github":
-        human_description = f'IAC CI Gitops setup stateful_id "{stack.stateful_id}"'
-
-        inputargs = {"arguments": arguments,
-                     "automation_phase": "continuous_delivery",
-                     "human_description": human_description}
-
-        stack.setup_iac_ci_on_github.insert(**inputargs)
 
     return stack.get_results()
