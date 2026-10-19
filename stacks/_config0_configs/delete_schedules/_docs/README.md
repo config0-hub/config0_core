@@ -12,7 +12,6 @@ This stack allows for the deletion of schedules in Config0, with support for bot
 |------|-------------|---------|
 | parallel_ids | IDs of schedules to be deleted in parallel | "null" |
 | sequential_ids | IDs of schedules to be deleted sequentially | "null" |
-| destroy_instance | Flag to determine if the instance should be destroyed | "null" |
 
 ### Optional
 

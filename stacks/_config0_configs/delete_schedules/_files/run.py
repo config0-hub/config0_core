@@ -22,7 +22,6 @@ def run(stackargs):
     # Add required arguments
     stack.parse.add_required(key="parallel_ids", default="null")
     stack.parse.add_required(key="sequential_ids", default="null")
-    stack.parse.add_required(key="destroy_instance", default="null")
     stack.parse.add_optional(key="parallel_overide", default="null")
 
     # Initialize Variables in stack
@@ -50,7 +49,7 @@ def run(stackargs):
         stack.logger.debug("Executing delete schedule_ids in parallel")
         for _num, parallel_id in enumerate(all_schedule_ids):
             stack.remove_schedule(parallel_id)
-        return stack.get_results(None)
+        return stack.get_results()
 
     # Delete parallel schedules
     if stack.get_attr("parallel_ids"):
@@ -59,7 +58,7 @@ def run(stackargs):
 
     # Delete sequential ids
     if not stack.get_attr("sequential_ids"):
-        return stack.get_results(stack.destroy_instance)
+        return stack.get_results()
 
     # unset_parallel() emits the check-wait::api row when parallel removals
     # were queued; with none queued there is nothing to wait for.
@@ -67,4 +66,4 @@ def run(stackargs):
 
     for sequential_id in stack.sequential_ids:
         stack.remove_schedule(sequential_id)
-    return stack.get_results(None)
+    return stack.get_results()

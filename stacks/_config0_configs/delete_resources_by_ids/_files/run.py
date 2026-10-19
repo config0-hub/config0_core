@@ -78,7 +78,7 @@ def run(stackargs):
     _ids = [x.strip() for x in stack.db_ids.split(",") if x.strip()]
 
     if not _ids:
-        return stack.get_results(None)
+        return stack.get_results()
 
     # The order delete_resources_by_time uses: the infrastructure deletes, a
     # barrier, the SSM secret deletes, then the record-only deletes with the
@@ -117,4 +117,4 @@ def run(stackargs):
 
     stack.wait_all()
 
-    return stack.get_results(None)
+    return stack.get_results()

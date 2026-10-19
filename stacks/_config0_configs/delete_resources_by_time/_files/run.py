@@ -374,7 +374,7 @@ def run(stackargs):
         # fences the SSM secret removes and the record-only unrecords behind
         # the whole concurrent batch.
         _remove_secrets_and_unrecord_rows_last(stack, secret_requests, record_only_requests)
-        return stack.get_results(None)
+        return stack.get_results()
 
     # Two tiers, as the original (_main/run.py:153-167): the independent
     # (query_only/parent) tier torn down concurrently under set_parallel(),
@@ -399,4 +399,4 @@ def run(stackargs):
     # barrier (user decision).
     _remove_secrets_and_unrecord_rows_last(stack, secret_requests, record_only_requests)
 
-    return stack.get_results(None)
+    return stack.get_results()

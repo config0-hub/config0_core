@@ -98,4 +98,4 @@ def run(stackargs):
     # tables. The chain is driven entirely by this stack's orders.
     stack.add_project_delete_callback()
 
-    return stack.get_results(None)
+    return stack.get_results()

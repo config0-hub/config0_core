@@ -91,4 +91,4 @@ def run(stackargs):
                            display=True,
                            role="external/cli/execute")
 
-    return stack.get_results(stackargs.get("destroy_instance"))
+    return stack.get_results()
