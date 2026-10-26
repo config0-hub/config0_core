@@ -27,11 +27,7 @@ def _has_state_pointer(resource):
 
 
 def _is_ssm_secret(resource):
-    """True for a stack.add_secret row that wrote an SSM parameter (ssm_path).
-
-    An insert_ssm=False secret row records ssm_path=None: it names no
-    parameter and is deleted with the record-only rows.
-    """
+    """True for a stack.add_secret row naming its permanent SSM parameter."""
     return (resource.get("resource_type") == "secret"
             and resource.get("ssm_path") not in (None, "", "null", "None"))
 
@@ -82,10 +78,9 @@ def run(stackargs):
 
     # The order delete_resources_by_time uses: the infrastructure deletes, a
     # barrier, the SSM secret deletes, then the record-only deletes with the
-    # schedule's connection pointer last. An infrastructure delete of the same
-    # schedule writes the schedule's secret parameters again before its destroy
-    # runs, so a secret deleted beside it could get its parameter back. A
-    # secret's remove mints its target credentials through the connection
+    # schedule's connection pointer last. Infrastructure destroy reads its
+    # permanent SSM parameters before their deletion. A secret's remove mints
+    # its target credentials through the connection
     # pointer. Stored rows only, never the read-time overlay.
     rows = {_id: stack.get_resource(match={"_id": _id}, overlay_tfstate=False)
             for _id in _ids}

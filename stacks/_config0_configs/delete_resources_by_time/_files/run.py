@@ -100,7 +100,6 @@ def _is_ssm_secret(resource):
     The row has no state pointer, but its ``ssm_path`` names a parameter in
     the target account. Its removal deletes that parameter, so it is a
     recorded-row teardown (remove_resource by _id), not a record-only row.
-    An insert_ssm=False secret row records ssm_path=None and stays record-only.
     """
     return (resource.get("resource_type") == "secret"
             and resource.get("ssm_path") not in (None, "", "null", "None"))
